@@ -1,0 +1,92 @@
+#pragma once
+
+#include "../../Core/IGameWorld.hpp"
+#include "../../Core/Unit.hpp"
+#include "../Components.hpp"
+
+#include <vector>
+#include <cmath>
+#include <algorithm>
+#include <memory>
+#include <type_traits>
+
+namespace sw::features::utils
+{
+	namespace details
+	{
+		template <typename WorldT, typename UnitPtrT>
+		std::vector<UnitPtrT> getTargetsInRangeImpl(
+			const core::Unit& unit, WorldT& world, uint32_t minRange, uint32_t maxRange)
+		{
+			std::vector<UnitPtrT> targets;
+			core::Position pos = unit.getPosition();
+
+			int32_t minX = static_cast<int32_t>(pos.x) - static_cast<int32_t>(maxRange);
+			int32_t maxX = static_cast<int32_t>(pos.x) + static_cast<int32_t>(maxRange);
+			int32_t minY = static_cast<int32_t>(pos.y) - static_cast<int32_t>(maxRange);
+			int32_t maxY = static_cast<int32_t>(pos.y) + static_cast<int32_t>(maxRange);
+
+			minX = std::max(0, minX);
+			minY = std::max(0, minY);
+			maxX = std::min(static_cast<int32_t>(world.getWidth()) - 1, maxX);
+			maxY = std::min(static_cast<int32_t>(world.getHeight()) - 1, maxY);
+
+			for (int32_t x = minX; x <= maxX; ++x)
+			{
+				for (int32_t y = minY; y <= maxY; ++y)
+				{
+					core::Position p{ static_cast<uint32_t>(x), static_cast<uint32_t>(y) };
+					
+					if (p == pos) continue;
+
+					uint32_t dist = std::max(std::abs(x - static_cast<int32_t>(pos.x)), std::abs(y - static_cast<int32_t>(pos.y)));
+
+					if (dist >= minRange && dist <= maxRange)
+					{
+						auto* other = world.getUnitAt(p);
+						if (other)
+						{
+							if (other->template getComponent<HealthComponent>())
+							{
+								targets.push_back(other);
+							}
+						}
+					}
+				}
+			}
+			return targets;
+		}
+	}
+
+	// Const version for canExecute (returns const Unit*)
+	inline std::vector<const core::Unit*> getTargetsInRange(
+		const core::Unit& unit, const core::IGameWorld& world, uint32_t minRange, uint32_t maxRange)
+	{
+		return details::getTargetsInRangeImpl<const core::IGameWorld, const core::Unit*>(unit, world, minRange, maxRange);
+	}
+
+	// Non-const version for execute (returns Unit*)
+	inline std::vector<core::Unit*> getTargetsInRange(
+		const core::Unit& unit, core::IGameWorld& world, uint32_t minRange, uint32_t maxRange)
+	{
+		return details::getTargetsInRangeImpl<core::IGameWorld, core::Unit*>(unit, world, minRange, maxRange);
+	}
+
+	inline void dealDamage(core::Unit& attacker, core::Unit* target, uint32_t damage, core::IGameWorld& world)
+	{
+		if (!target) return;
+
+		auto hp = target->getComponent<HealthComponent>();
+		if (!hp) return;
+
+		hp->currentHp -= static_cast<int32_t>(damage);
+		
+		if (hp->currentHp <= 0)
+		{
+			target->setDead(true);
+		}
+
+		uint32_t reportHp = (hp->currentHp < 0) ? 0 : static_cast<uint32_t>(hp->currentHp);
+		world.onUnitAttacked(attacker.getId(), target->getId(), damage, reportHp);
+	}
+}
