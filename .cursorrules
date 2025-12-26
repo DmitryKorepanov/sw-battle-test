@@ -1,0 +1,88 @@
+# Project Structure
+
+- `src/Core`: project foundation you own and stabilize; provide clear contracts/APIs for others. Avoid becoming a bottleneck—favor extension points and minimal churn of public interfaces.
+- `src/Features`: gameplay/feature code built on Core APIs; extend via provided interfaces rather than modifying Core. Keep feature-specific logic localized here.
+- `src/IO`: auxiliary layer for parsing scenario input and printing events to a log. It is expected that code here changes only to support new scenario commands or new events for logging.
+
+# General Principles
+
+- **SOLID**: Adhere to SOLID principles. Ensure classes have a single responsibility, are open for extension but closed for modification, and depend on abstractions.
+- **DRY (Don't Repeat Yourself)**: Avoid code duplication. Abstract common logic into helper functions or shared components.
+- **KISS (Keep It Simple, Stupid)**: Avoid over-engineering. Prefer clear, simple, and readable code over complex solutions.
+- **Explicit Standard**: Target C++20 unless a file states otherwise. Prefer modern features (`constexpr`, `[[nodiscard]]`, `noexcept` where appropriate).
+- **No 3rd-party dependencies**: Use only the standard library unless the repository explicitly introduces a dependency.
+- **IO contract stability**: Do not change scenario input format or event output format; extend via new commands/events only.
+- **Module boundaries**: Keep feature logic in `src/Features` and foundation/contracts in `src/Core`; prefer extension points over modifying stable Core APIs.
+
+# Tooling & Formatting
+
+- **Formatter**: Use `clang-format` consistent with Allman style and tabs below; tabs are preferred. If a file already uses spaces consistently, match it.
+- **Brace Style**: Allman (opening brace on a new line for namespaces, classes, functions, control blocks).
+- **Indentation**: Tabs preferred. Use 4 spaces only to match an existing file’s convention.
+- **File Extensions**: `.hpp` for headers, `.cpp` for implementation.
+- **Includes**:
+  - Use `#pragma once` in headers. No `using namespace` in headers.
+  - In `.cpp`: include the corresponding header first (e.g., `"Foo.hpp"`), then other includes.
+  - In `.hpp`: keep includes minimal and follow the existing module/file convention; do not rely on transitive includes (add missing standard headers explicitly, e.g., `<unordered_map>`, `<stdexcept>`, `<type_traits>`).
+- **Header hygiene**: Keep includes minimal; do not rely on transitive includes. Add missing standard headers explicitly.
+
+# Comments & Documentation
+
+- Prefer self-documenting code; add comments only when they clarify **why** (constraints, invariants, intent) rather than **what**.
+- Use `//` for short implementation notes. Avoid “obvious” comments that restate the code.
+- Keep comments up to date; remove commented-out code.
+
+## Naming Conventions
+
+- **Classes & Structs**: `PascalCase`
+  - Example: `CommandParser`, `CreateMap`
+- **Functions & Methods**: `camelCase`
+  - Example: `add`, `parse`, `visit`
+- **Private Member Variables**: `_camelCase` (start with underscore)
+  - Example: `_commands`, `_stream`
+- **Public Member Variables (Structs/POD)**: `camelCase` (no prefix)
+  - Example: `width`, `height`
+- **Local Variables & Parameters**: `camelCase`
+  - Example: `commandName`, `handler`
+- **Template Parameters**: `TPascalCase` (start with T)
+  - Example: `TCommandData`, `TField`, `TInterface`
+- **Constants / Static Members**: `PascalCase`
+  - Example: `constexpr static const char* Name = "CREATE_MAP";`
+- **Namespaces**: Prefer lowercase and make namespaces match the module/directory.
+  - **Shared utilities**: `namespace sw { ... }` (e.g., visitors/log helpers shared across modules)
+  - **IO module (`src/IO`)**: `namespace sw::io { ... }`
+  - **Core module (`src/Core`)**: `namespace sw::core { ... }`
+  - **Features module (`src/Features`)**: `namespace sw::features { ... }`
+  - Avoid mixing different module roots in the same component unless there is a clear ownership boundary.
+
+# Ownership & Lifetimes
+
+- Prefer `std::unique_ptr` for ownership; use `std::shared_ptr` only when lifetime is genuinely shared (e.g., `TypeRegistry`). Non-owning views via references, `std::span`, `std::string_view`. Raw pointers only for non-owning references; document expectations.
+- Mark read-only access with `const`. Take parameters by `const&` or value if cheap; prefer views to avoid copies.
+- Be explicit with ownership transfer (`std::move`); avoid implicit transfers.
+
+# Error Handling & Logging
+
+- Use exceptions for programmer/configuration errors (e.g., unknown command). Consider `[[nodiscard]]` for functions returning status.
+- Use `assert` for invariants that must hold in debug builds.
+- When logging, prefer dependency injection of streams/loggers over globals; if writing to `stdout/stderr`, keep side effects minimal in helpers.
+
+# APIs, Enums, Const-correctness
+
+- Prefer `enum class` for scoped enums; name values in `PascalCase`.
+- Favor `constexpr`/`constinit` for constants over macros. Macros only when unavoidable; name macros in `ALL_CAPS`.
+- Keep public APIs `const`-correct; prefer `const T&` parameters in utilities that do not modify data.
+
+# Architecture & Patterns
+
+- **Visitor Pattern**: Use for serialization/parsing where appropriate (e.g., `visit(Visitor& visitor)` method in data structs).
+- **Encapsulation**: Keep data members private in classes (`_member`), public in POD structs.
+- **Extensibility**: Prefer registration/dispatch patterns (see `CommandParser`) over large conditionals; guard against duplicate registration with clear errors.
+- **DTO + Visitor for IO**: In `src/IO`, model scenario commands and log events as simple `struct` DTOs with `constexpr static Name` and `visit(Visitor&)` for parsing/printing.
+- **Type-based Registry**: If needed, use `TypeRegistry`-style registration to wire components by type. Prefer explicit dependencies/constructor injection when the dependency graph is small and clear.
+
+# Verification
+
+- If/when the project has a test harness, add or update tests alongside behavior changes and include regression cases for fixed bugs.
+- If there is no test harness yet, add a small reproducible scenario (e.g., extend `commands_example.txt` or add a new scenario file) and document how to run it and what to look for in the output.
+
