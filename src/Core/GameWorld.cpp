@@ -71,9 +71,25 @@ namespace sw::core
 		return (it != _unitById.end()) ? it->second : nullptr;
 	}
 
-	const std::vector<std::unique_ptr<Unit>>& GameWorld::getUnits() const
+	void GameWorld::forEachUnit(const std::function<void(Unit&)>& visitor)
 	{
-		return _units;
+		for (auto& unit : _units)
+		{
+			visitor(*unit);
+		}
+	}
+
+	void GameWorld::forEachUnit(const std::function<void(const Unit&)>& visitor) const
+	{
+		for (const auto& unit : _units)
+		{
+			visitor(*unit);
+		}
+	}
+
+	size_t GameWorld::getUnitCount() const noexcept
+	{
+		return _units.size();
 	}
 
 	bool GameWorld::moveUnit(UnitId unitId, Position to)

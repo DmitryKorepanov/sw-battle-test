@@ -174,14 +174,13 @@ int main(int argc, char** argv)
 	{
 		bool anyAction = false;
 		
-		const auto& units = map->getUnits();
 		sw::core::IGameEvents& events = *eventAdapter;
 
-		for (auto& unit : units)
+		map->forEachUnit([&](sw::core::Unit& unit)
 		{
-			bool acted = unit->playTurn(*map, events);
+			bool acted = unit.playTurn(*map, events);
 			if (acted) anyAction = true;
-		}
+		});
 
 		// 2. Cleanup Dead
 		auto deadUnits = map->removeDeadUnits();
@@ -191,7 +190,7 @@ int main(int argc, char** argv)
 		}
 
 		// 3. Check End Conditions
-		size_t aliveCount = map->getUnits().size();
+		const size_t aliveCount = map->getUnitCount();
 		
 		if (aliveCount <= 1)
 		{

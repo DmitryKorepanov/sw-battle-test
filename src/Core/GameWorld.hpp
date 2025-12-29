@@ -4,6 +4,7 @@
 #include <vector>
 #include <unordered_map>
 #include <memory>
+#include <functional>
 
 namespace sw::core
 {
@@ -15,7 +16,7 @@ namespace sw::core
 		uint32_t getWidth() const override;
 		uint32_t getHeight() const override;
 
-		void addUnit(std::unique_ptr<Unit> unit) override;
+		void addUnit(std::unique_ptr<Unit> unit);
 		
 		const Unit* getUnitAt(Position pos) const override;
 		Unit* getUnitAt(Position pos) override;
@@ -24,7 +25,10 @@ namespace sw::core
 		bool moveUnit(UnitId unitId, Position to) override;
 
 		// Simulation helpers
-		const std::vector<std::unique_ptr<Unit>>& getUnits() const;
+		void forEachUnit(const std::function<void(Unit&)>& visitor);
+		void forEachUnit(const std::function<void(const Unit&)>& visitor) const;
+
+		[[nodiscard]] size_t getUnitCount() const noexcept;
 		
 		// Returns IDs of units removed
 		std::vector<UnitId> removeDeadUnits();
@@ -37,10 +41,9 @@ namespace sw::core
 		uint32_t _width;
 		uint32_t _height;
 		
-		// Ownership: unique_ptr owns the units.
+		// Ownership
 		std::vector<std::unique_ptr<Unit>> _units;
-		
-		// Lookup: raw pointers (non-owning views)
+		// Lookup
 		std::vector<Unit*> _grid; 
 		std::unordered_map<UnitId, Unit*> _unitById;
 	};

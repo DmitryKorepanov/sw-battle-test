@@ -10,7 +10,7 @@ namespace sw::core
 	{
 	public:
 		template<typename T>
-		static T getItem(const std::vector<T>& items)
+		static const T& getItem(const std::vector<T>& items)
 		{
 			if (items.empty())
 			{
@@ -23,6 +23,10 @@ namespace sw::core
 
 			return items[dis(gen)];
 		}
+
+		// Prevent returning a reference to an element of a temporary vector.
+		template<typename T>
+		static const T& getItem(std::vector<T>&&) = delete;
 	};
 }
 
