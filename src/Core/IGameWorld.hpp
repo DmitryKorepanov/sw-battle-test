@@ -4,7 +4,7 @@
 
 namespace sw::core
 {
-	class Unit; // Forward declaration
+	class Unit;	 // Forward declaration
 
 	class IGameWorld
 	{
@@ -14,7 +14,7 @@ namespace sw::core
 		// World dimensions
 		virtual uint32_t getWidth() const = 0;
 		virtual uint32_t getHeight() const = 0;
-		
+
 		// Unit queries
 		virtual const Unit* getUnitAt(Position pos) const = 0;
 		virtual Unit* getUnitAt(Position pos) = 0;

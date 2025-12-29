@@ -1,43 +1,61 @@
 #pragma once
 
-#include "Types.hpp"
-#include "IComponent.hpp"
 #include "IBehavior.hpp"
+#include "IComponent.hpp"
 #include "TypeRegistry.hpp"
+#include "Types.hpp"
 
-#include <vector>
 #include <memory>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 namespace sw::core
 {
-	class GameWorld; // Forward decl
+	class GameWorld;  // Forward decl
 
 	class Unit
 	{
-	public:
-		Unit(UnitId id, Position pos)
-			: _id(id)
-			, _position(pos)
-		{}
-
-		virtual ~Unit() = default;
-
-		[[nodiscard]] UnitId getId() const noexcept { return _id; }
-		[[nodiscard]] Position getPosition() const noexcept { return _position; }
-		
+	private:
 		// Allow GameWorld to access setPosition to maintain grid consistency.
 		// Behaviors should use world.moveUnit() instead of modifying unit directly.
 		friend class GameWorld;
 
-	private:
-		void setPosition(Position pos) noexcept { _position = pos; }
+		UnitId _id;
+		Position _position;
+		bool _isDead{false};
+
+		TypeRegistry _components;
+		std::vector<std::unique_ptr<IBehavior>> _behaviors;
+
+		void setPosition(Position pos) noexcept
+		{
+			_position = pos;
+		}
 
 	public:
+		Unit(UnitId id, Position pos) :
+				_id(id),
+				_position(pos)
+		{}
+
+		virtual ~Unit() = default;
+
+		[[nodiscard]]
+		UnitId getId() const noexcept
+		{
+			return _id;
+		}
+
+		[[nodiscard]]
+		Position getPosition() const noexcept
+		{
+			return _position;
+		}
+
 		// === Components ===
 
-		template<typename T, typename... Args>
+		template <typename T, typename... Args>
 		T& addComponent(Args&&... args)
 		{
 			static_assert(std::is_base_of_v<IComponent, T>, "Component must inherit from IComponent");
@@ -45,19 +63,19 @@ namespace sw::core
 			return *ptr;
 		}
 
-		template<typename T>
+		template <typename T>
 		std::shared_ptr<T> getComponent()
 		{
 			return _components.get<T>();
 		}
 
-		template<typename T>
+		template <typename T>
 		std::shared_ptr<const T> getComponent() const
 		{
 			return _components.get<T>();
 		}
 
-		template<typename T>
+		template <typename T>
 		void removeComponent()
 		{
 			_components.remove<T>();
@@ -84,16 +102,16 @@ namespace sw::core
 		}
 
 		// === State ===
-		
-		[[nodiscard]] bool isDead() const noexcept { return _isDead; }
-		void setDead(bool dead) noexcept { _isDead = dead; }
 
-	private:
-		UnitId _id;
-		Position _position;
-		bool _isDead{ false };
+		[[nodiscard]]
+		bool isDead() const noexcept
+		{
+			return _isDead;
+		}
 
-		TypeRegistry _components;
-		std::vector<std::unique_ptr<IBehavior>> _behaviors;
+		void setDead(bool dead) noexcept
+		{
+			_isDead = dead;
+		}
 	};
 }

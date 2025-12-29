@@ -8,4 +8,3 @@ namespace sw::core
 		virtual ~IComponent() = default;
 	};
 }
-

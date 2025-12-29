@@ -1,13 +1,15 @@
 #include "GameWorld.hpp"
+
 #include "Unit.hpp"
-#include <stdexcept>
+
 #include <algorithm>
+#include <stdexcept>
 
 namespace sw::core
 {
-	GameWorld::GameWorld(uint32_t width, uint32_t height)
-		: _width(width)
-		, _height(height)
+	GameWorld::GameWorld(uint32_t width, uint32_t height) :
+			_width(width),
+			_height(height)
 	{
 		_grid.resize(width * height, nullptr);
 	}
@@ -48,20 +50,26 @@ namespace sw::core
 		// Update lookups
 		_grid[index] = unit.get();
 		_unitById[unit->getId()] = unit.get();
-		
+
 		// Store ownership
 		_units.push_back(std::move(unit));
 	}
 
 	const Unit* GameWorld::getUnitAt(Position pos) const
 	{
-		if (!isValid(pos)) return nullptr;
+		if (!isValid(pos))
+		{
+			return nullptr;
+		}
 		return _grid[getGridIndex(pos)];
 	}
 
 	Unit* GameWorld::getUnitAt(Position pos)
 	{
-		if (!isValid(pos)) return nullptr;
+		if (!isValid(pos))
+		{
+			return nullptr;
+		}
 		return _grid[getGridIndex(pos)];
 	}
 
@@ -100,16 +108,25 @@ namespace sw::core
 
 	bool GameWorld::moveUnit(UnitId unitId, Position to)
 	{
-		if (!isValid(to)) return false;
-		
+		if (!isValid(to))
+		{
+			return false;
+		}
+
 		auto it = _unitById.find(unitId);
-		if (it == _unitById.end()) return false;
-		
+		if (it == _unitById.end())
+		{
+			return false;
+		}
+
 		Unit* unit = it->second;
 		Position from = unit->getPosition();
 
 		size_t toIndex = getGridIndex(to);
-		if (_grid[toIndex] != nullptr) return false; // Blocked
+		if (_grid[toIndex] != nullptr)
+		{
+			return false;  // Blocked
+		}
 
 		// Update grid
 		_grid[getGridIndex(from)] = nullptr;
@@ -117,7 +134,7 @@ namespace sw::core
 
 		// Update unit
 		unit->setPosition(to);
-		
+
 		return true;
 	}
 
@@ -131,9 +148,9 @@ namespace sw::core
 			if (unit->isDead())
 			{
 				removedIds.push_back(unit->getId());
-				
+
 				_unitById.erase(unit->getId());
-				
+
 				if (isValid(unit->getPosition()))
 				{
 					size_t index = getGridIndex(unit->getPosition());
@@ -146,9 +163,9 @@ namespace sw::core
 		}
 
 		// Second pass: remove from ownership vector
-		auto it = std::remove_if(_units.begin(), _units.end(),
-			[](const std::unique_ptr<Unit>& u) { return u->isDead(); });
-		
+		auto it
+			= std::remove_if(_units.begin(), _units.end(), [](const std::unique_ptr<Unit>& u) { return u->isDead(); });
+
 		_units.erase(it, _units.end());
 
 		return removedIds;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Types.hpp"
+
 #include <string_view>
 
 namespace sw::core
@@ -19,4 +20,3 @@ namespace sw::core
 		virtual void onMarchEnded(UnitId unit, Position pos) = 0;
 	};
 }
-

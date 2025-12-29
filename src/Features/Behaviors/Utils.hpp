@@ -1,15 +1,15 @@
 #pragma once
 
-#include "../../Core/IGameWorld.hpp"
 #include "../../Core/IGameEvents.hpp"
+#include "../../Core/IGameWorld.hpp"
 #include "../../Core/Unit.hpp"
 #include "../Components.hpp"
 
-#include <vector>
-#include <cmath>
 #include <algorithm>
+#include <cmath>
 #include <memory>
 #include <type_traits>
+#include <vector>
 
 namespace sw::features::utils
 {
@@ -36,11 +36,15 @@ namespace sw::features::utils
 			{
 				for (int32_t y = minY; y <= maxY; ++y)
 				{
-					core::Position p{ static_cast<uint32_t>(x), static_cast<uint32_t>(y) };
-					
-					if (p == pos) continue;
+					core::Position p{static_cast<uint32_t>(x), static_cast<uint32_t>(y)};
 
-					uint32_t dist = std::max(std::abs(x - static_cast<int32_t>(pos.x)), std::abs(y - static_cast<int32_t>(pos.y)));
+					if (p == pos)
+					{
+						continue;
+					}
+
+					uint32_t dist = std::max(
+						std::abs(x - static_cast<int32_t>(pos.x)), std::abs(y - static_cast<int32_t>(pos.y)));
 
 					if (dist >= minRange && dist <= maxRange)
 					{
@@ -93,19 +97,21 @@ namespace sw::features::utils
 	}
 
 	inline void dealDamage(
-		core::Unit& attacker,
-		core::Unit* target,
-		uint32_t damage,
-		core::IGameWorld& world,
-		core::IGameEvents& events)
+		core::Unit& attacker, core::Unit* target, uint32_t damage, core::IGameWorld& world, core::IGameEvents& events)
 	{
-		if (!target) return;
+		if (!target)
+		{
+			return;
+		}
 
 		auto hp = target->getComponent<HealthComponent>();
-		if (!hp) return;
+		if (!hp)
+		{
+			return;
+		}
 
 		hp->currentHp -= static_cast<int32_t>(damage);
-		
+
 		if (hp->currentHp <= 0)
 		{
 			target->setDead(true);
@@ -115,4 +121,3 @@ namespace sw::features::utils
 		events.onUnitAttacked(attacker.getId(), target->getId(), damage, reportHp);
 	}
 }
-

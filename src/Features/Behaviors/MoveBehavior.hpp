@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../../Core/IBehavior.hpp"
-#include "../../Core/IGameWorld.hpp"
 #include "../../Core/IGameEvents.hpp"
+#include "../../Core/IGameWorld.hpp"
 #include "../../Core/Unit.hpp"
 #include "../Components.hpp"
 
@@ -11,7 +11,8 @@ namespace sw::features
 	class MoveBehavior : public core::IBehavior
 	{
 	private:
-		[[nodiscard]] static bool tryGetNextPos(
+		[[nodiscard]]
+		static bool tryGetNextPos(
 			const core::Unit& unit,
 			const core::IGameWorld& world,
 			const MarchComponent& march,
@@ -41,14 +42,13 @@ namespace sw::features
 			const int32_t nextY = currentY + stepY;
 
 			// Bounds check in signed arithmetic to avoid underflow.
-			if (nextX < 0 || nextY < 0
-				|| nextX >= static_cast<int32_t>(world.getWidth())
+			if (nextX < 0 || nextY < 0 || nextX >= static_cast<int32_t>(world.getWidth())
 				|| nextY >= static_cast<int32_t>(world.getHeight()))
 			{
 				return false;
 			}
 
-			const core::Position nextPos{ static_cast<uint32_t>(nextX), static_cast<uint32_t>(nextY) };
+			const core::Position nextPos{static_cast<uint32_t>(nextX), static_cast<uint32_t>(nextY)};
 
 			// Blockage check (current rules: units occupy cells)
 			if (world.getUnitAt(nextPos) != nullptr)
@@ -64,10 +64,16 @@ namespace sw::features
 		bool canExecute(const core::Unit& unit, const core::IGameWorld& world) const override
 		{
 			auto march = unit.getComponent<MarchComponent>();
-			if (!march) return false;
+			if (!march)
+			{
+				return false;
+			}
 
 			// If already at target -> can execute (to finish)
-			if (unit.getPosition() == march->target) return true;
+			if (unit.getPosition() == march->target)
+			{
+				return true;
+			}
 
 			core::Position nextPos{};
 			return tryGetNextPos(unit, world, *march, nextPos);
@@ -76,7 +82,10 @@ namespace sw::features
 		void execute(core::Unit& unit, core::IGameWorld& world, core::IGameEvents& events) override
 		{
 			auto march = unit.getComponent<MarchComponent>();
-			if (!march) return;
+			if (!march)
+			{
+				return;
+			}
 
 			auto target = march->target;
 			auto pos = unit.getPosition();

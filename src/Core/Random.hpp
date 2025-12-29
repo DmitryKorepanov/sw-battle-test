@@ -1,15 +1,15 @@
 #pragma once
 
-#include <vector>
 #include <random>
 #include <stdexcept>
+#include <vector>
 
 namespace sw::core
 {
 	class Random
 	{
 	public:
-		template<typename T>
+		template <typename T>
 		static const T& getItem(const std::vector<T>& items)
 		{
 			if (items.empty())
@@ -25,8 +25,7 @@ namespace sw::core
 		}
 
 		// Prevent returning a reference to an element of a temporary vector.
-		template<typename T>
+		template <typename T>
 		static const T& getItem(std::vector<T>&&) = delete;
 	};
 }
-

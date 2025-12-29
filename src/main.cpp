@@ -1,28 +1,28 @@
-#include <iostream>
-#include <fstream>
-#include <memory>
-#include <vector>
-#include <functional>
-#include <string_view>
-
 #include "Core/GameWorld.hpp"
 #include "Core/IGameEvents.hpp"
-#include "Features/Swordsman.hpp"
-#include "Features/Hunter.hpp"
-#include "IO/System/CommandParser.hpp"
 #include "Features/Components.hpp"
+#include "Features/Hunter.hpp"
+#include "Features/Swordsman.hpp"
 #include "IO/Commands/CreateMap.hpp"
-#include "IO/Commands/SpawnSwordsman.hpp"
-#include "IO/Commands/SpawnHunter.hpp"
 #include "IO/Commands/March.hpp"
+#include "IO/Commands/SpawnHunter.hpp"
+#include "IO/Commands/SpawnSwordsman.hpp"
 #include "IO/Events/MapCreated.hpp"
-#include "IO/Events/UnitSpawned.hpp"
-#include "IO/Events/MarchStarted.hpp"
 #include "IO/Events/MarchEnded.hpp"
-#include "IO/Events/UnitMoved.hpp"
+#include "IO/Events/MarchStarted.hpp"
 #include "IO/Events/UnitAttacked.hpp"
 #include "IO/Events/UnitDied.hpp"
+#include "IO/Events/UnitMoved.hpp"
+#include "IO/Events/UnitSpawned.hpp"
+#include "IO/System/CommandParser.hpp"
 #include "IO/System/EventLog.hpp"
+
+#include <fstream>
+#include <functional>
+#include <iostream>
+#include <memory>
+#include <string_view>
+#include <vector>
 
 using namespace sw;
 using namespace sw::core;
@@ -31,50 +31,50 @@ using namespace sw::features;
 // Adapter for IGameEvents -> EventLog
 class GameLogger : public IGameEvents
 {
+private:
+	EventLog& _log;
+	uint64_t& _tick;
+
 public:
-	GameLogger(EventLog& log, uint64_t& tickRef) 
-		: _log(log)
-		, _tick(tickRef) 
+	GameLogger(EventLog& log, uint64_t& tickRef) :
+			_log(log),
+			_tick(tickRef)
 	{}
 
 	void onMapCreated(uint32_t width, uint32_t height) override
 	{
-		_log.log(_tick, io::MapCreated{ width, height });
+		_log.log(_tick, io::MapCreated{width, height});
 	}
 
 	void onUnitSpawned(UnitId unit, std::string_view unitType, Position pos) override
 	{
-		_log.log(_tick, io::UnitSpawned{ unit, std::string(unitType), pos.x, pos.y });
+		_log.log(_tick, io::UnitSpawned{unit, std::string(unitType), pos.x, pos.y});
 	}
 
 	void onMarchStarted(UnitId unit, Position from, Position target) override
 	{
-		_log.log(_tick, io::MarchStarted{ unit, from.x, from.y, target.x, target.y });
+		_log.log(_tick, io::MarchStarted{unit, from.x, from.y, target.x, target.y});
 	}
 
 	void onUnitAttacked(UnitId attacker, UnitId target, uint32_t damage, uint32_t targetHp) override
 	{
-		_log.log(_tick, io::UnitAttacked{ attacker, target, damage, targetHp });
+		_log.log(_tick, io::UnitAttacked{attacker, target, damage, targetHp});
 	}
 
 	void onUnitMoved(UnitId unit, Position from, Position to) override
 	{
-		_log.log(_tick, io::UnitMoved{ unit, to.x, to.y });
+		_log.log(_tick, io::UnitMoved{unit, to.x, to.y});
 	}
 
 	void onUnitDied(UnitId unit) override
 	{
-		_log.log(_tick, io::UnitDied{ unit });
+		_log.log(_tick, io::UnitDied{unit});
 	}
 
 	void onMarchEnded(UnitId unit, Position pos) override
 	{
-		_log.log(_tick, io::MarchEnded{ unit, pos.x, pos.y });
+		_log.log(_tick, io::MarchEnded{unit, pos.x, pos.y});
 	}
-
-private:
-	EventLog& _log;
-	uint64_t& _tick;
 };
 
 int main(int argc, char** argv)
@@ -95,72 +95,73 @@ int main(int argc, char** argv)
 	io::CommandParser parser;
 	sw::EventLog logger;
 	uint64_t tick = 1;
-	
+
 	// Create event adapter
 	auto eventAdapter = std::make_shared<GameLogger>(logger, tick);
-	
+
 	std::unique_ptr<GameWorld> map;
 
 	// --- Setup Command Handlers ---
 
-	parser.add<io::CreateMap>([&](auto command)
-	{
-		map = std::make_unique<GameWorld>(command.width, command.height);
-		eventAdapter->onMapCreated(command.width, command.height);
-	})
-	.add<io::SpawnSwordsman>([&](auto command)
-	{
-		if (!map) throw std::runtime_error("Map not created");
-		
-		auto unit = std::make_unique<Swordsman>(
-			command.unitId, 
-			Position{ command.x, command.y }, 
-			command.hp, 
-			command.strength
-		);
-		
-		map->addUnit(std::move(unit));
-		eventAdapter->onUnitSpawned(
-			command.unitId,
-			"Swordsman",
-			Position{ command.x, command.y });
-	})
-	.add<io::SpawnHunter>([&](auto command)
-	{
-		if (!map) throw std::runtime_error("Map not created");
+	parser
+		.add<io::CreateMap>(
+			[&](auto command)
+			{
+				map = std::make_unique<GameWorld>(command.width, command.height);
+				eventAdapter->onMapCreated(command.width, command.height);
+			})
+		.add<io::SpawnSwordsman>(
+			[&](auto command)
+			{
+				if (!map)
+				{
+					throw std::runtime_error("Map not created");
+				}
 
-		auto unit = std::make_unique<Hunter>(
-			command.unitId,
-			Position{ command.x, command.y },
-			command.hp,
-			command.agility,
-			command.strength,
-			command.range
-		);
+				auto unit = std::make_unique<Swordsman>(
+					command.unitId, Position{command.x, command.y}, command.hp, command.strength);
 
-		map->addUnit(std::move(unit));
-		eventAdapter->onUnitSpawned(
-			command.unitId,
-			"Hunter",
-			Position{ command.x, command.y });
-	})
-	.add<io::March>([&](auto command)
-	{
-		if (!map) throw std::runtime_error("Map not created");
+				map->addUnit(std::move(unit));
+				eventAdapter->onUnitSpawned(command.unitId, "Swordsman", Position{command.x, command.y});
+			})
+		.add<io::SpawnHunter>(
+			[&](auto command)
+			{
+				if (!map)
+				{
+					throw std::runtime_error("Map not created");
+				}
 
-		auto* unit = map->getUnitById(command.unitId);
-		if (unit)
-		{
-			unit->template addComponent<MarchComponent>(Position{ command.targetX, command.targetY });
-			eventAdapter->onMarchStarted(
-				command.unitId,
-				unit->getPosition(),
-				Position{ command.targetX, command.targetY });
-		}
-	});
+				auto unit = std::make_unique<Hunter>(
+					command.unitId,
+					Position{command.x, command.y},
+					command.hp,
+					command.agility,
+					command.strength,
+					command.range);
+
+				map->addUnit(std::move(unit));
+				eventAdapter->onUnitSpawned(command.unitId, "Hunter", Position{command.x, command.y});
+			})
+		.add<io::March>(
+			[&](auto command)
+			{
+				if (!map)
+				{
+					throw std::runtime_error("Map not created");
+				}
+
+				auto* unit = map->getUnitById(command.unitId);
+				if (unit)
+				{
+					unit->template addComponent<MarchComponent>(Position{command.targetX, command.targetY});
+					eventAdapter->onMarchStarted(
+						command.unitId, unit->getPosition(), Position{command.targetX, command.targetY});
+				}
+			});
 
 	// --- Parse Scenario ---
-	
+
 	try
 	{
 		parser.parse(stream);
@@ -185,14 +186,17 @@ int main(int argc, char** argv)
 	while (true)
 	{
 		bool anyAction = false;
-		
+
 		sw::core::IGameEvents& events = *eventAdapter;
 
-		map->forEachUnit([&](sw::core::Unit& unit)
-		{
-			bool acted = unit.playTurn(*map, events);
-			if (acted) anyAction = true;
-		});
+		map->forEachUnit(
+			[&](sw::core::Unit& unit)
+			{
+				if (unit.playTurn(*map, events))
+				{
+					anyAction = true;
+				}
+			});
 
 		// 2. Cleanup Dead
 		auto deadUnits = map->removeDeadUnits();
@@ -203,7 +207,7 @@ int main(int argc, char** argv)
 
 		// 3. Check End Conditions
 		const size_t aliveCount = map->getUnitCount();
-		
+
 		if (aliveCount <= 1)
 		{
 			break;

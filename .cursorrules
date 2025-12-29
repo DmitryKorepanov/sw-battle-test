@@ -26,6 +26,23 @@
   - In `.hpp`: keep includes minimal and follow the existing module/file convention; do not rely on transitive includes (add missing standard headers explicitly, e.g., `<unordered_map>`, `<stdexcept>`, `<type_traits>`).
 - **Header hygiene**: Keep includes minimal; do not rely on transitive includes. Add missing standard headers explicitly.
 
+# Code Layout & Ordering (Classes)
+
+## General
+- Prefer **at most one** block of each access specifier per class (avoid `public/private/public`).
+- When a file already has an established order, **follow that file**.
+
+## Project-wide (single rule for all classes)
+- **Access sections order**: `private:` → `public:` (use `protected:` only when you truly need inheritance hooks).
+- **Within `private:`**:
+  - **State first** (data members / invariants)
+  - **Helpers second** (private methods)
+  - `friend` declarations belong here when they exist purely for implementation details.
+- **Within `public:`** (top to bottom):
+  - Types / aliases / constants
+  - Ctors / dtor / copy-move
+  - Methods (group interface overrides under comments like `// --- IGameWorld ---` when helpful)
+
 # Comments & Documentation
 
 - Prefer self-documenting code; add comments only when they clarify **why** (constraints, invariants, intent) rather than **what**.
@@ -85,4 +102,3 @@
 
 - If/when the project has a test harness, add or update tests alongside behavior changes and include regression cases for fixed bugs.
 - If there is no test harness yet, add a small reproducible scenario (e.g., extend `commands_example.txt` or add a new scenario file) and document how to run it and what to look for in the output.
-

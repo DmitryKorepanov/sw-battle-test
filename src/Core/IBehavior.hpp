@@ -18,4 +18,3 @@ namespace sw::core
 		virtual void execute(Unit& unit, IGameWorld& world, IGameEvents& events) = 0;
 	};
 }
-
