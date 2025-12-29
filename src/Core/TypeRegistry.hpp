@@ -74,6 +74,9 @@ namespace sw::core
 		template <typename T>
 		void remove()
 		{
+			// NOTE: This method must be called with the CONCRETE type used during registration.
+			// Removing by interface type (if registered as such) will NOT clear the concrete instance 
+			// or other aliases due to lack of reverse-lookup.
 			auto typeT = std::type_index(typeid(T));
 			_instances.erase(typeT);
 			

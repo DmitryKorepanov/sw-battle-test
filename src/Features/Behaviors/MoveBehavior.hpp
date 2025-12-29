@@ -22,22 +22,29 @@ namespace sw::features
 			auto target = march->target;
 			auto pos = unit.getPosition();
 
-			int32_t dx = static_cast<int32_t>(target.x) - static_cast<int32_t>(pos.x);
-			int32_t dy = static_cast<int32_t>(target.y) - static_cast<int32_t>(pos.y);
+			int32_t currentX = static_cast<int32_t>(pos.x);
+			int32_t currentY = static_cast<int32_t>(pos.y);
+			int32_t targetX = static_cast<int32_t>(target.x);
+			int32_t targetY = static_cast<int32_t>(target.y);
+
+			int32_t dx = targetX - currentX;
+			int32_t dy = targetY - currentY;
 
 			int32_t stepX = (dx > 0) ? 1 : ((dx < 0) ? -1 : 0);
 			int32_t stepY = (dy > 0) ? 1 : ((dy < 0) ? -1 : 0);
 
-			core::Position nextPos = { 
-				static_cast<uint32_t>(static_cast<int32_t>(pos.x) + stepX), 
-				static_cast<uint32_t>(static_cast<int32_t>(pos.y) + stepY) 
-			};
+			int32_t nextX = currentX + stepX;
+			int32_t nextY = currentY + stepY;
 
-			// Check bounds
-			if (nextPos.x >= world.getWidth() || nextPos.y >= world.getHeight())
+			// Check bounds safely in signed arithmetic
+			if (nextX < 0 || nextY < 0 || 
+				nextX >= static_cast<int32_t>(world.getWidth()) || 
+				nextY >= static_cast<int32_t>(world.getHeight()))
 			{
-				return false; // Stuck
+				return false; // Stuck / Out of bounds
 			}
+
+			core::Position nextPos = { static_cast<uint32_t>(nextX), static_cast<uint32_t>(nextY) };
 
 			// Check blockage
 			if (world.getUnitAt(nextPos)) // const getUnitAt
@@ -64,22 +71,29 @@ namespace sw::features
 				return;
 			}
 
-			int32_t dx = static_cast<int32_t>(target.x) - static_cast<int32_t>(pos.x);
-			int32_t dy = static_cast<int32_t>(target.y) - static_cast<int32_t>(pos.y);
+			int32_t currentX = static_cast<int32_t>(pos.x);
+			int32_t currentY = static_cast<int32_t>(pos.y);
+			int32_t targetX = static_cast<int32_t>(target.x);
+			int32_t targetY = static_cast<int32_t>(target.y);
+
+			int32_t dx = targetX - currentX;
+			int32_t dy = targetY - currentY;
 
 			int32_t stepX = (dx > 0) ? 1 : ((dx < 0) ? -1 : 0);
 			int32_t stepY = (dy > 0) ? 1 : ((dy < 0) ? -1 : 0);
 
-			core::Position nextPos = { 
-				static_cast<uint32_t>(static_cast<int32_t>(pos.x) + stepX), 
-				static_cast<uint32_t>(static_cast<int32_t>(pos.y) + stepY) 
-			};
+			int32_t nextX = currentX + stepX;
+			int32_t nextY = currentY + stepY;
 
-			// Re-check bounds and blockage (though canExecute should have caught it)
-			if (nextPos.x >= world.getWidth() || nextPos.y >= world.getHeight())
+			// Re-check bounds
+			if (nextX < 0 || nextY < 0 || 
+				nextX >= static_cast<int32_t>(world.getWidth()) || 
+				nextY >= static_cast<int32_t>(world.getHeight()))
 			{
 				return;
 			}
+
+			core::Position nextPos = { static_cast<uint32_t>(nextX), static_cast<uint32_t>(nextY) };
 
 			if (world.getUnitAt(nextPos))
 			{

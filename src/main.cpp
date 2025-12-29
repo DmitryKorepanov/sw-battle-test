@@ -77,14 +77,14 @@ int main(int argc, char** argv)
 	{
 		if (!map) throw std::runtime_error("Map not created");
 		
-		auto unit = std::make_shared<Swordsman>(
+		auto unit = std::make_unique<Swordsman>(
 			command.unitId, 
 			Position{ command.x, command.y }, 
 			command.hp, 
 			command.strength
 		);
 		
-		map->addUnit(unit);
+		map->addUnit(std::move(unit));
 		logger.log(tick, io::UnitSpawned{ 
 			command.unitId, 
 			"Swordsman", 
@@ -95,7 +95,7 @@ int main(int argc, char** argv)
 	{
 		if (!map) throw std::runtime_error("Map not created");
 
-		auto unit = std::make_shared<Hunter>(
+		auto unit = std::make_unique<Hunter>(
 			command.unitId,
 			Position{ command.x, command.y },
 			command.hp,
@@ -104,7 +104,7 @@ int main(int argc, char** argv)
 			command.range
 		);
 
-		map->addUnit(unit);
+		map->addUnit(std::move(unit));
 		logger.log(tick, io::UnitSpawned{
 			command.unitId,
 			"Hunter",
@@ -115,7 +115,7 @@ int main(int argc, char** argv)
 	{
 		if (!map) throw std::runtime_error("Map not created");
 
-		auto unit = map->getUnitById(command.unitId);
+		auto* unit = map->getUnitById(command.unitId);
 		if (unit)
 		{
 			unit->addComponent<MarchComponent>(Position{ command.targetX, command.targetY });

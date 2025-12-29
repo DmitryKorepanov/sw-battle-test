@@ -1,6 +1,6 @@
 #include "GameWorld.hpp"
-#include <algorithm>
 #include <stdexcept>
+#include <algorithm>
 
 namespace sw::core
 {
@@ -9,18 +9,6 @@ namespace sw::core
 		, _height(height)
 	{
 		_grid.resize(width * height, nullptr);
-	}
-
-	const Unit* GameWorld::getUnitAt(Position pos) const
-	{
-		if (!isValid(pos)) return nullptr;
-		return _grid[getGridIndex(pos)].get();
-	}
-
-	Unit* GameWorld::getUnitAt(Position pos)
-	{
-		if (!isValid(pos)) return nullptr;
-		return _grid[getGridIndex(pos)].get();
 	}
 
 	uint32_t GameWorld::getWidth() const
@@ -33,139 +21,159 @@ namespace sw::core
 		return _height;
 	}
 
-	bool GameWorld::moveUnit(UnitId unitId, Position to)
+	void GameWorld::addUnit(std::unique_ptr<Unit> unit)
 	{
-		auto unit = getUnitById(unitId);
-		if (!unit) return false;
+		if (!isValid(unit->getPosition()))
+		{
+			throw std::out_of_range("Unit position out of bounds");
+		}
 
-		if (!isValid(to)) return false; 
-		if (getUnitAt(to)) return false; // Uses non-const getUnitAt, fine
+		size_t index = getGridIndex(unit->getPosition());
+		if (_grid[index] != nullptr)
+		{
+			throw std::runtime_error("Position already occupied");
+		}
 
-		Position from = unit->getPosition();
+		if (_unitById.find(unit->getId()) != _unitById.end())
+		{
+			throw std::runtime_error("Unit ID already exists");
+		}
+
+		// Update lookups
+		_grid[index] = unit.get();
+		_unitById[unit->getId()] = unit.get();
 		
-		if (isValid(from))
-		{
-			size_t oldIdx = getGridIndex(from);
-			if (_grid[oldIdx] == unit)
-			{
-				_grid[oldIdx] = nullptr;
-			}
-		}
-
-		unit->setPosition(to);
-
-		_grid[getGridIndex(to)] = unit;
-
-		onUnitMoved(unitId, from, to);
-		return true;
+		// Store ownership
+		_units.push_back(std::move(unit));
 	}
 
-	void GameWorld::onUnitAttacked(UnitId attackerId, UnitId targetId, uint32_t damage, uint32_t targetHp)
+	const Unit* GameWorld::getUnitAt(Position pos) const
 	{
-		if (_onAttack)
-		{
-			_onAttack(attackerId, targetId, damage, targetHp);
-		}
+		if (!isValid(pos)) return nullptr;
+		return _grid[getGridIndex(pos)];
 	}
 
-	void GameWorld::onUnitMoved(UnitId unitId, Position from, Position to)
+	Unit* GameWorld::getUnitAt(Position pos)
 	{
-		if (_onMove)
-		{
-			_onMove(unitId, from, to);
-		}
+		if (!isValid(pos)) return nullptr;
+		return _grid[getGridIndex(pos)];
 	}
 
-	void GameWorld::onUnitDied(UnitId unitId)
-	{
-		if (_onDeath)
-		{
-			_onDeath(unitId);
-		}
-	}
-
-	void GameWorld::onMarchEnded(UnitId unitId, Position pos)
-	{
-		if (_onMarchEnded)
-		{
-			_onMarchEnded(unitId, pos);
-		}
-	}
-
-	void GameWorld::addUnit(std::shared_ptr<Unit> unit)
-	{
-		if (!unit) return;
-
-		Position pos = unit->getPosition();
-		if (!isValid(pos))
-		{
-			throw std::runtime_error("Unit spawned outside map boundaries");
-		}
-
-		if (getUnitAt(pos))
-		{
-			throw std::runtime_error("Unit spawned on occupied cell");
-		}
-
-		if (getUnitById(unit->getId()))
-		{
-			throw std::runtime_error("Unit with this ID already exists");
-		}
-
-		_units.push_back(unit);
-		_unitById[unit->getId()] = unit;
-		_grid[getGridIndex(pos)] = unit;
-	}
-
-	std::shared_ptr<Unit> GameWorld::getUnitById(UnitId id) const
+	Unit* GameWorld::getUnitById(UnitId id)
 	{
 		auto it = _unitById.find(id);
-		if (it != _unitById.end())
-		{
-			return it->second;
-		}
-		return nullptr;
+		return (it != _unitById.end()) ? it->second : nullptr;
 	}
 
-	const std::vector<std::shared_ptr<Unit>>& GameWorld::getUnits() const
+	const std::vector<std::unique_ptr<Unit>>& GameWorld::getUnits() const
 	{
 		return _units;
 	}
 
+	bool GameWorld::moveUnit(UnitId unitId, Position to)
+	{
+		if (!isValid(to)) return false;
+		
+		auto it = _unitById.find(unitId);
+		if (it == _unitById.end()) return false;
+		
+		Unit* unit = it->second;
+		Position from = unit->getPosition();
+
+		size_t toIndex = getGridIndex(to);
+		if (_grid[toIndex] != nullptr) return false; // Blocked
+
+		// Update grid
+		_grid[getGridIndex(from)] = nullptr;
+		_grid[toIndex] = unit;
+
+		// Update unit
+		unit->setPosition(to);
+
+		onUnitMoved(unit, from, to);
+		return true;
+	}
+
 	void GameWorld::removeDeadUnits()
 	{
-		auto it = std::remove_if(_units.begin(), _units.end(),
-			[this](const std::shared_ptr<Unit>& unit)
+		// First pass: identify dead and cleanup lookups
+		for (const auto& unit : _units)
+		{
+			if (unit->isDead())
 			{
-				if (unit->isDead())
+				onUnitDied(unit.get());
+				
+				_unitById.erase(unit->getId());
+				
+				if (isValid(unit->getPosition()))
 				{
-					onUnitDied(unit->getId());
-
-					_unitById.erase(unit->getId());
-					
-					if (isValid(unit->getPosition()))
+					size_t index = getGridIndex(unit->getPosition());
+					// Only clear grid if it still points to this unit 
+					// (though strictly it should, as dead units don't move)
+					if (_grid[index] == unit.get())
 					{
-						size_t idx = getGridIndex(unit->getPosition());
-						if (_grid[idx] == unit)
-						{
-							_grid[idx] = nullptr;
-						}
+						_grid[index] = nullptr;
 					}
-					return true;
 				}
-				return false;
-			});
+			}
+		}
 
+		// Second pass: remove from ownership vector
+		auto it = std::remove_if(_units.begin(), _units.end(),
+			[](const std::unique_ptr<Unit>& u) { return u->isDead(); });
+		
 		_units.erase(it, _units.end());
 	}
 
 	size_t GameWorld::getGridIndex(Position pos) const
 	{
-		return pos.y * _width + pos.x;
+		return static_cast<size_t>(pos.y) * _width + static_cast<size_t>(pos.x);
 	}
 
 	bool GameWorld::isValid(Position pos) const
 	{
 		return pos.x < _width && pos.y < _height;
+	}
+
+	// --- Events ---
+
+	void GameWorld::setOnAttack(std::function<void(UnitId, UnitId, uint32_t, uint32_t)> cb)
+	{
+		_onAttack = cb;
+	}
+
+	void GameWorld::setOnMove(std::function<void(UnitId, Position, Position)> cb)
+	{
+		_onMove = cb;
+	}
+
+	void GameWorld::setOnDeath(std::function<void(UnitId)> cb)
+	{
+		_onDeath = cb;
+	}
+
+	void GameWorld::setOnMarchEnded(std::function<void(UnitId, Position)> cb)
+	{
+		_onMarchEnded = cb;
+	}
+
+	void GameWorld::onUnitAttacked(UnitId attacker, UnitId target, uint32_t damage, uint32_t targetHp)
+	{
+		if (_onAttack) _onAttack(attacker, target, damage, targetHp);
+	}
+
+	void GameWorld::onUnitMoved(Unit* unit, Position from, Position to)
+	{
+		if (_onMove) _onMove(unit->getId(), from, to);
+	}
+
+	void GameWorld::onUnitDied(Unit* unit)
+	{
+		if (_onDeath) _onDeath(unit->getId());
+	}
+
+	void GameWorld::onMarchEnded(UnitId unit, Position pos)
+	{
+		if (_onMarchEnded) _onMarchEnded(unit, pos);
 	}
 }
