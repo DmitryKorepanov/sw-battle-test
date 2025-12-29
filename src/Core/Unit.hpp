@@ -3,14 +3,12 @@
 #include "Types.hpp"
 #include "IComponent.hpp"
 #include "IBehavior.hpp"
-#include "IGameWorld.hpp"
-#include "IGameEvents.hpp"
 #include "TypeRegistry.hpp"
 
 #include <vector>
 #include <memory>
-#include <optional>
 #include <type_traits>
+#include <utility>
 
 namespace sw::core
 {
@@ -26,15 +24,15 @@ namespace sw::core
 
 		virtual ~Unit() = default;
 
-		UnitId getId() const { return _id; }
-		Position getPosition() const { return _position; }
+		[[nodiscard]] UnitId getId() const noexcept { return _id; }
+		[[nodiscard]] Position getPosition() const noexcept { return _position; }
 		
 		// Allow GameWorld to access setPosition to maintain grid consistency.
 		// Behaviors should use world.moveUnit() instead of modifying unit directly.
 		friend class GameWorld;
 
 	private:
-		void setPosition(Position pos) { _position = pos; }
+		void setPosition(Position pos) noexcept { _position = pos; }
 
 	public:
 		// === Components ===
@@ -87,8 +85,8 @@ namespace sw::core
 
 		// === State ===
 		
-		bool isDead() const { return _isDead; }
-		void setDead(bool dead) { _isDead = dead; }
+		[[nodiscard]] bool isDead() const noexcept { return _isDead; }
+		void setDead(bool dead) noexcept { _isDead = dead; }
 
 	private:
 		UnitId _id;

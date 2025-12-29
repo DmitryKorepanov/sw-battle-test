@@ -12,12 +12,12 @@ namespace sw::core
 		Coordinate x;
 		Coordinate y;
 
-		bool operator==(const Position& other) const
+		constexpr bool operator==(const Position& other) const noexcept
 		{
 			return x == other.x && y == other.y;
 		}
 
-		bool operator!=(const Position& other) const
+		constexpr bool operator!=(const Position& other) const noexcept
 		{
 			return !(*this == other);
 		}
