@@ -20,7 +20,9 @@ namespace sw::features
 			
 			if (!agility || !range || range->value < 2) return false;
 
-			auto neighbors = utils::getTargetsInRange(unit, world, 1, 1);
+			// Rule: hunter can shoot only if there are no OTHER units in adjacent cells
+			// (not just "attackable" ones). So we check all units.
+			auto neighbors = utils::getUnitsInRange(unit, world, 1, 1);
 			if (!neighbors.empty())
 			{
 				return false;

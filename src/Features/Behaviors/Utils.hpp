@@ -15,9 +15,9 @@ namespace sw::features::utils
 {
 	namespace details
 	{
-		template <typename WorldT, typename UnitPtrT>
+		template <typename WorldT, typename UnitPtrT, typename TFilter>
 		std::vector<UnitPtrT> getTargetsInRangeImpl(
-			const core::Unit& unit, WorldT& world, uint32_t minRange, uint32_t maxRange)
+			const core::Unit& unit, WorldT& world, uint32_t minRange, uint32_t maxRange, TFilter filter)
 		{
 			std::vector<UnitPtrT> targets;
 			core::Position pos = unit.getPosition();
@@ -45,12 +45,9 @@ namespace sw::features::utils
 					if (dist >= minRange && dist <= maxRange)
 					{
 						auto* other = world.getUnitAt(p);
-						if (other)
+						if (other && filter(other))
 						{
-							if (other->template getComponent<HealthComponent>())
-							{
-								targets.push_back(other);
-							}
+							targets.push_back(other);
 						}
 					}
 				}
@@ -59,18 +56,40 @@ namespace sw::features::utils
 		}
 	}
 
+	inline bool hasHealth(const core::Unit* unit)
+	{
+		return unit && unit->getComponent<HealthComponent>();
+	}
+
 	// Const version for canExecute (returns const Unit*)
 	inline std::vector<const core::Unit*> getTargetsInRange(
 		const core::Unit& unit, const core::IGameWorld& world, uint32_t minRange, uint32_t maxRange)
 	{
-		return details::getTargetsInRangeImpl<const core::IGameWorld, const core::Unit*>(unit, world, minRange, maxRange);
+		return details::getTargetsInRangeImpl<const core::IGameWorld, const core::Unit*>(
+			unit, world, minRange, maxRange, [](const core::Unit* u) { return hasHealth(u); });
 	}
 
 	// Non-const version for execute (returns Unit*)
 	inline std::vector<core::Unit*> getTargetsInRange(
 		const core::Unit& unit, core::IGameWorld& world, uint32_t minRange, uint32_t maxRange)
 	{
-		return details::getTargetsInRangeImpl<core::IGameWorld, core::Unit*>(unit, world, minRange, maxRange);
+		return details::getTargetsInRangeImpl<core::IGameWorld, core::Unit*>(
+			unit, world, minRange, maxRange, [](core::Unit* u) { return hasHealth(u); });
+	}
+
+	// Returns all units in range (no filtering).
+	inline std::vector<const core::Unit*> getUnitsInRange(
+		const core::Unit& unit, const core::IGameWorld& world, uint32_t minRange, uint32_t maxRange)
+	{
+		return details::getTargetsInRangeImpl<const core::IGameWorld, const core::Unit*>(
+			unit, world, minRange, maxRange, [](const core::Unit*) { return true; });
+	}
+
+	inline std::vector<core::Unit*> getUnitsInRange(
+		const core::Unit& unit, core::IGameWorld& world, uint32_t minRange, uint32_t maxRange)
+	{
+		return details::getTargetsInRangeImpl<core::IGameWorld, core::Unit*>(
+			unit, world, minRange, maxRange, [](core::Unit*) { return true; });
 	}
 
 	inline void dealDamage(
@@ -96,3 +115,4 @@ namespace sw::features::utils
 		events.onUnitAttacked(attacker.getId(), target->getId(), damage, reportHp);
 	}
 }
+

@@ -96,11 +96,6 @@ namespace sw::features
 
 			core::Position nextPos = { static_cast<uint32_t>(nextX), static_cast<uint32_t>(nextY) };
 
-			if (world.getUnitAt(nextPos))
-			{
-				return;
-			}
-
 			const auto from = pos;
 			if (world.moveUnit(unit.getId(), nextPos))
 			{
