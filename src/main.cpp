@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 #include <functional>
+#include <string_view>
 
 #include "Core/GameWorld.hpp"
 #include "Core/IGameEvents.hpp"
@@ -35,6 +36,21 @@ public:
 		: _log(log)
 		, _tick(tickRef) 
 	{}
+
+	void onMapCreated(uint32_t width, uint32_t height) override
+	{
+		_log.log(_tick, io::MapCreated{ width, height });
+	}
+
+	void onUnitSpawned(UnitId unit, std::string_view unitType, Position pos) override
+	{
+		_log.log(_tick, io::UnitSpawned{ unit, std::string(unitType), pos.x, pos.y });
+	}
+
+	void onMarchStarted(UnitId unit, Position from, Position target) override
+	{
+		_log.log(_tick, io::MarchStarted{ unit, from.x, from.y, target.x, target.y });
+	}
 
 	void onUnitAttacked(UnitId attacker, UnitId target, uint32_t damage, uint32_t targetHp) override
 	{
@@ -90,7 +106,7 @@ int main(int argc, char** argv)
 	parser.add<io::CreateMap>([&](auto command)
 	{
 		map = std::make_unique<GameWorld>(command.width, command.height);
-		logger.log(tick, io::MapCreated{ command.width, command.height });
+		eventAdapter->onMapCreated(command.width, command.height);
 	})
 	.add<io::SpawnSwordsman>([&](auto command)
 	{
@@ -104,11 +120,10 @@ int main(int argc, char** argv)
 		);
 		
 		map->addUnit(std::move(unit));
-		logger.log(tick, io::UnitSpawned{ 
-			command.unitId, 
-			"Swordsman", 
-			command.x, command.y 
-		});
+		eventAdapter->onUnitSpawned(
+			command.unitId,
+			"Swordsman",
+			Position{ command.x, command.y });
 	})
 	.add<io::SpawnHunter>([&](auto command)
 	{
@@ -124,11 +139,10 @@ int main(int argc, char** argv)
 		);
 
 		map->addUnit(std::move(unit));
-		logger.log(tick, io::UnitSpawned{
+		eventAdapter->onUnitSpawned(
 			command.unitId,
 			"Hunter",
-			command.x, command.y
-		});
+			Position{ command.x, command.y });
 	})
 	.add<io::March>([&](auto command)
 	{
@@ -138,12 +152,10 @@ int main(int argc, char** argv)
 		if (unit)
 		{
 			unit->template addComponent<MarchComponent>(Position{ command.targetX, command.targetY });
-			logger.log(tick, io::MarchStarted{ 
-				command.unitId, 
-				unit->getPosition().x, unit->getPosition().y,
-				command.targetX, 
-				command.targetY 
-			});
+			eventAdapter->onMarchStarted(
+				command.unitId,
+				unit->getPosition(),
+				Position{ command.targetX, command.targetY });
 		}
 	});
 
