@@ -4,6 +4,7 @@
 #include "IComponent.hpp"
 #include "IBehavior.hpp"
 #include "IGameWorld.hpp"
+#include "IGameEvents.hpp"
 #include "TypeRegistry.hpp"
 
 #include <vector>
@@ -71,13 +72,13 @@ namespace sw::core
 			_behaviors.push_back(std::move(behavior));
 		}
 
-		bool playTurn(IGameWorld& world)
+		bool playTurn(IGameWorld& world, IGameEvents& events)
 		{
 			for (auto& behavior : _behaviors)
 			{
 				if (behavior->canExecute(*this, world))
 				{
-					behavior->execute(*this, world);
+					behavior->execute(*this, world, events);
 					return true;
 				}
 			}

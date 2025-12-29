@@ -2,6 +2,7 @@
 
 #include "../../Core/IBehavior.hpp"
 #include "../../Core/IGameWorld.hpp"
+#include "../../Core/IGameEvents.hpp"
 #include "../../Core/Unit.hpp"
 #include "../../Core/Random.hpp"
 #include "../Components.hpp"
@@ -29,7 +30,7 @@ namespace sw::features
 			return !targets.empty();
 		}
 
-		void execute(core::Unit& unit, core::IGameWorld& world) override
+		void execute(core::Unit& unit, core::IGameWorld& world, core::IGameEvents& events) override
 		{
 			const auto agility = unit.getComponent<AgilityComponent>();
 			const auto range = unit.getComponent<RangeComponent>();
@@ -40,7 +41,7 @@ namespace sw::features
 
 			auto target = core::Random::getItem(targets);
 			
-			utils::dealDamage(unit, target, agility->value, world);
+			utils::dealDamage(unit, target, agility->value, world, events);
 		}
 	};
 }

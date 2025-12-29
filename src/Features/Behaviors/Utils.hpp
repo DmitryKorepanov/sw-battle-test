@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../../Core/IGameWorld.hpp"
+#include "../../Core/IGameEvents.hpp"
 #include "../../Core/Unit.hpp"
 #include "../Components.hpp"
 
@@ -72,7 +73,12 @@ namespace sw::features::utils
 		return details::getTargetsInRangeImpl<core::IGameWorld, core::Unit*>(unit, world, minRange, maxRange);
 	}
 
-	inline void dealDamage(core::Unit& attacker, core::Unit* target, uint32_t damage, core::IGameWorld& world)
+	inline void dealDamage(
+		core::Unit& attacker,
+		core::Unit* target,
+		uint32_t damage,
+		core::IGameWorld& world,
+		core::IGameEvents& events)
 	{
 		if (!target) return;
 
@@ -87,6 +93,6 @@ namespace sw::features::utils
 		}
 
 		uint32_t reportHp = (hp->currentHp < 0) ? 0 : static_cast<uint32_t>(hp->currentHp);
-		world.onUnitAttacked(attacker.getId(), target->getId(), damage, reportHp);
+		events.onUnitAttacked(attacker.getId(), target->getId(), damage, reportHp);
 	}
 }

@@ -1,4 +1,5 @@
 #include "GameWorld.hpp"
+#include "Unit.hpp"
 #include <stdexcept>
 #include <algorithm>
 
@@ -23,6 +24,11 @@ namespace sw::core
 
 	void GameWorld::addUnit(std::unique_ptr<Unit> unit)
 	{
+		if (!unit)
+		{
+			throw std::invalid_argument("Cannot add null unit");
+		}
+
 		if (!isValid(unit->getPosition()))
 		{
 			throw std::out_of_range("Unit position out of bounds");
@@ -89,27 +95,26 @@ namespace sw::core
 
 		// Update unit
 		unit->setPosition(to);
-
-		onUnitMoved(unit, from, to);
+		
 		return true;
 	}
 
-	void GameWorld::removeDeadUnits()
+	std::vector<UnitId> GameWorld::removeDeadUnits()
 	{
+		std::vector<UnitId> removedIds;
+
 		// First pass: identify dead and cleanup lookups
 		for (const auto& unit : _units)
 		{
 			if (unit->isDead())
 			{
-				onUnitDied(unit.get());
+				removedIds.push_back(unit->getId());
 				
 				_unitById.erase(unit->getId());
 				
 				if (isValid(unit->getPosition()))
 				{
 					size_t index = getGridIndex(unit->getPosition());
-					// Only clear grid if it still points to this unit 
-					// (though strictly it should, as dead units don't move)
 					if (_grid[index] == unit.get())
 					{
 						_grid[index] = nullptr;
@@ -123,6 +128,8 @@ namespace sw::core
 			[](const std::unique_ptr<Unit>& u) { return u->isDead(); });
 		
 		_units.erase(it, _units.end());
+
+		return removedIds;
 	}
 
 	size_t GameWorld::getGridIndex(Position pos) const
@@ -133,47 +140,5 @@ namespace sw::core
 	bool GameWorld::isValid(Position pos) const
 	{
 		return pos.x < _width && pos.y < _height;
-	}
-
-	// --- Events ---
-
-	void GameWorld::setOnAttack(std::function<void(UnitId, UnitId, uint32_t, uint32_t)> cb)
-	{
-		_onAttack = cb;
-	}
-
-	void GameWorld::setOnMove(std::function<void(UnitId, Position, Position)> cb)
-	{
-		_onMove = cb;
-	}
-
-	void GameWorld::setOnDeath(std::function<void(UnitId)> cb)
-	{
-		_onDeath = cb;
-	}
-
-	void GameWorld::setOnMarchEnded(std::function<void(UnitId, Position)> cb)
-	{
-		_onMarchEnded = cb;
-	}
-
-	void GameWorld::onUnitAttacked(UnitId attacker, UnitId target, uint32_t damage, uint32_t targetHp)
-	{
-		if (_onAttack) _onAttack(attacker, target, damage, targetHp);
-	}
-
-	void GameWorld::onUnitMoved(Unit* unit, Position from, Position to)
-	{
-		if (_onMove) _onMove(unit->getId(), from, to);
-	}
-
-	void GameWorld::onUnitDied(Unit* unit)
-	{
-		if (_onDeath) _onDeath(unit->getId());
-	}
-
-	void GameWorld::onMarchEnded(UnitId unit, Position pos)
-	{
-		if (_onMarchEnded) _onMarchEnded(unit, pos);
 	}
 }

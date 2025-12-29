@@ -4,6 +4,7 @@ namespace sw::core
 {
 	class Unit;
 	class IGameWorld;
+	class IGameEvents;
 
 	class IBehavior
 	{
@@ -14,7 +15,7 @@ namespace sw::core
 		virtual bool canExecute(const Unit& unit, const IGameWorld& world) const = 0;
 
 		// Executes the behavior
-		virtual void execute(Unit& unit, IGameWorld& world) = 0;
+		virtual void execute(Unit& unit, IGameWorld& world, IGameEvents& events) = 0;
 	};
 }
 

@@ -2,6 +2,7 @@
 
 #include "../../Core/IBehavior.hpp"
 #include "../../Core/IGameWorld.hpp"
+#include "../../Core/IGameEvents.hpp"
 #include "../../Core/Unit.hpp"
 #include "../Components.hpp"
 
@@ -55,7 +56,7 @@ namespace sw::features
 			return true;
 		}
 
-		void execute(core::Unit& unit, core::IGameWorld& world) override
+		void execute(core::Unit& unit, core::IGameWorld& world, core::IGameEvents& events) override
 		{
 			auto march = unit.getComponent<MarchComponent>();
 			if (!march) return;
@@ -66,7 +67,7 @@ namespace sw::features
 			// Check if already at target (start of turn or immediate completion)
 			if (pos == target)
 			{
-				world.onMarchEnded(unit.getId(), target);
+				events.onMarchEnded(unit.getId(), target);
 				unit.removeComponent<MarchComponent>();
 				return;
 			}
@@ -100,11 +101,14 @@ namespace sw::features
 				return;
 			}
 
+			const auto from = pos;
 			if (world.moveUnit(unit.getId(), nextPos))
 			{
+				events.onUnitMoved(unit.getId(), from, nextPos);
+
 				if (nextPos == target)
 				{
-					world.onMarchEnded(unit.getId(), target);
+					events.onMarchEnded(unit.getId(), target);
 					unit.removeComponent<MarchComponent>();
 				}
 			}

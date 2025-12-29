@@ -1,13 +1,12 @@
 #pragma once
 
 #include "Types.hpp"
-#include "Unit.hpp"
-#include <vector>
 #include <memory>
-#include <functional>
 
 namespace sw::core
 {
+	class Unit; // Forward declaration
+
 	class IGameWorld
 	{
 	public:
@@ -26,9 +25,5 @@ namespace sw::core
 
 		// Actions
 		virtual bool moveUnit(UnitId unitId, Position to) = 0;
-
-		// Events / Callbacks (Reporting)
-		virtual void onUnitAttacked(UnitId attacker, UnitId target, uint32_t damage, uint32_t targetHp) = 0;
-		virtual void onMarchEnded(UnitId unit, Position pos) = 0;
 	};
 }
