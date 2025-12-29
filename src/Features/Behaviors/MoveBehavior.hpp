@@ -10,6 +10,56 @@ namespace sw::features
 {
 	class MoveBehavior : public core::IBehavior
 	{
+	private:
+		[[nodiscard]] static bool tryGetNextPos(
+			const core::Unit& unit,
+			const core::IGameWorld& world,
+			const MarchComponent& march,
+			core::Position& outNextPos)
+		{
+			const auto target = march.target;
+			const auto pos = unit.getPosition();
+
+			// Caller handles "already at target" (completion).
+			if (pos == target)
+			{
+				return false;
+			}
+
+			const int32_t currentX = static_cast<int32_t>(pos.x);
+			const int32_t currentY = static_cast<int32_t>(pos.y);
+			const int32_t targetX = static_cast<int32_t>(target.x);
+			const int32_t targetY = static_cast<int32_t>(target.y);
+
+			const int32_t dx = targetX - currentX;
+			const int32_t dy = targetY - currentY;
+
+			const int32_t stepX = (dx > 0) ? 1 : ((dx < 0) ? -1 : 0);
+			const int32_t stepY = (dy > 0) ? 1 : ((dy < 0) ? -1 : 0);
+
+			const int32_t nextX = currentX + stepX;
+			const int32_t nextY = currentY + stepY;
+
+			// Bounds check in signed arithmetic to avoid underflow.
+			if (nextX < 0 || nextY < 0
+				|| nextX >= static_cast<int32_t>(world.getWidth())
+				|| nextY >= static_cast<int32_t>(world.getHeight()))
+			{
+				return false;
+			}
+
+			const core::Position nextPos{ static_cast<uint32_t>(nextX), static_cast<uint32_t>(nextY) };
+
+			// Blockage check (current rules: units occupy cells)
+			if (world.getUnitAt(nextPos) != nullptr)
+			{
+				return false;
+			}
+
+			outNextPos = nextPos;
+			return true;
+		}
+
 	public:
 		bool canExecute(const core::Unit& unit, const core::IGameWorld& world) const override
 		{
@@ -18,42 +68,9 @@ namespace sw::features
 
 			// If already at target -> can execute (to finish)
 			if (unit.getPosition() == march->target) return true;
-			
-			// Calculate next step
-			auto target = march->target;
-			auto pos = unit.getPosition();
 
-			int32_t currentX = static_cast<int32_t>(pos.x);
-			int32_t currentY = static_cast<int32_t>(pos.y);
-			int32_t targetX = static_cast<int32_t>(target.x);
-			int32_t targetY = static_cast<int32_t>(target.y);
-
-			int32_t dx = targetX - currentX;
-			int32_t dy = targetY - currentY;
-
-			int32_t stepX = (dx > 0) ? 1 : ((dx < 0) ? -1 : 0);
-			int32_t stepY = (dy > 0) ? 1 : ((dy < 0) ? -1 : 0);
-
-			int32_t nextX = currentX + stepX;
-			int32_t nextY = currentY + stepY;
-
-			// Check bounds safely in signed arithmetic
-			if (nextX < 0 || nextY < 0 || 
-				nextX >= static_cast<int32_t>(world.getWidth()) || 
-				nextY >= static_cast<int32_t>(world.getHeight()))
-			{
-				return false; // Stuck / Out of bounds
-			}
-
-			core::Position nextPos = { static_cast<uint32_t>(nextX), static_cast<uint32_t>(nextY) };
-
-			// Check blockage
-			if (world.getUnitAt(nextPos)) // const getUnitAt
-			{
-				return false; // Stuck
-			}
-
-			return true;
+			core::Position nextPos{};
+			return tryGetNextPos(unit, world, *march, nextPos);
 		}
 
 		void execute(core::Unit& unit, core::IGameWorld& world, core::IGameEvents& events) override
@@ -72,29 +89,11 @@ namespace sw::features
 				return;
 			}
 
-			int32_t currentX = static_cast<int32_t>(pos.x);
-			int32_t currentY = static_cast<int32_t>(pos.y);
-			int32_t targetX = static_cast<int32_t>(target.x);
-			int32_t targetY = static_cast<int32_t>(target.y);
-
-			int32_t dx = targetX - currentX;
-			int32_t dy = targetY - currentY;
-
-			int32_t stepX = (dx > 0) ? 1 : ((dx < 0) ? -1 : 0);
-			int32_t stepY = (dy > 0) ? 1 : ((dy < 0) ? -1 : 0);
-
-			int32_t nextX = currentX + stepX;
-			int32_t nextY = currentY + stepY;
-
-			// Re-check bounds
-			if (nextX < 0 || nextY < 0 || 
-				nextX >= static_cast<int32_t>(world.getWidth()) || 
-				nextY >= static_cast<int32_t>(world.getHeight()))
+			core::Position nextPos{};
+			if (!tryGetNextPos(unit, world, *march, nextPos))
 			{
 				return;
 			}
-
-			core::Position nextPos = { static_cast<uint32_t>(nextX), static_cast<uint32_t>(nextY) };
 
 			const auto from = pos;
 			if (world.moveUnit(unit.getId(), nextPos))
