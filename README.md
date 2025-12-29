@@ -91,6 +91,29 @@
 
 _В процессе выполнения задания вы можете присылать любые вопросы._
 
+## Сборка под Ubuntu (пример)
+
+Требуется CMake (3.20+), clang 15+ и любой генератор (например Ninja).
+
+```bash
+sudo apt-get update
+sudo apt-get install -y clang ninja-build cmake
+
+cmake -S . -B build -G Ninja -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+cmake --build build
+
+# запуск
+./build/sw_battle_test commands_example.txt
+```
+
+Запуск unit-тестов (если включены):
+
+```bash
+cmake -S . -B build -G Ninja -DBUILD_TESTING=ON -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+cmake --build build
+ctest --test-dir build --output-on-failure
+```
+
 
 # Планы на расширения
 
