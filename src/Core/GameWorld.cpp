@@ -65,6 +65,12 @@ namespace sw::core
 		return _grid[getGridIndex(pos)];
 	}
 
+	const Unit* GameWorld::getUnitById(UnitId id) const
+	{
+		auto it = _unitById.find(id);
+		return (it != _unitById.end()) ? it->second : nullptr;
+	}
+
 	Unit* GameWorld::getUnitById(UnitId id)
 	{
 		auto it = _unitById.find(id);

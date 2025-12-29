@@ -13,18 +13,21 @@ namespace sw::core
 	public:
 		GameWorld(uint32_t width, uint32_t height);
 
+		// --- IGameWorld ---
 		uint32_t getWidth() const override;
 		uint32_t getHeight() const override;
-
-		void addUnit(std::unique_ptr<Unit> unit);
 		
 		const Unit* getUnitAt(Position pos) const override;
 		Unit* getUnitAt(Position pos) override;
-		Unit* getUnitById(UnitId id);
+
+		const Unit* getUnitById(UnitId id) const override;
+		Unit* getUnitById(UnitId id) override;
 
 		bool moveUnit(UnitId unitId, Position to) override;
 
-		// Simulation helpers
+		// --- GameWorld API (simulation/orchestration helpers) ---
+		void addUnit(std::unique_ptr<Unit> unit);
+
 		void forEachUnit(const std::function<void(Unit&)>& visitor);
 		void forEachUnit(const std::function<void(const Unit&)>& visitor) const;
 

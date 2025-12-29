@@ -19,6 +19,9 @@ namespace sw::core
 		virtual const Unit* getUnitAt(Position pos) const = 0;
 		virtual Unit* getUnitAt(Position pos) = 0;
 
+		virtual const Unit* getUnitById(UnitId id) const = 0;
+		virtual Unit* getUnitById(UnitId id) = 0;
+
 		// Actions
 		virtual bool moveUnit(UnitId unitId, Position to) = 0;
 	};
