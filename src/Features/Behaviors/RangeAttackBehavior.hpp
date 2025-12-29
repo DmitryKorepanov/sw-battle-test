@@ -15,8 +15,8 @@ namespace sw::features
 	public:
 		bool canExecute(const core::Unit& unit, const core::IGameWorld& world) const override
 		{
-			const auto agility = unit.getComponent<AgilityComponent>();
-			const auto range = unit.getComponent<RangeComponent>();
+			const auto* agility = unit.getComponent<AgilityComponent>();
+			const auto* range = unit.getComponent<RangeComponent>();
 
 			if (!agility || !range || range->value < 2)
 			{
@@ -37,8 +37,8 @@ namespace sw::features
 
 		void execute(core::Unit& unit, core::IGameWorld& world, core::IGameEvents& events) override
 		{
-			const auto agility = unit.getComponent<AgilityComponent>();
-			const auto range = unit.getComponent<RangeComponent>();
+			const auto* agility = unit.getComponent<AgilityComponent>();
+			const auto* range = unit.getComponent<RangeComponent>();
 			if (!agility || !range)
 			{
 				return;

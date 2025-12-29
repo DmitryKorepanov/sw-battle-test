@@ -151,6 +151,11 @@ int main(int argc, char** argv)
 					throw std::runtime_error("Map not created");
 				}
 
+				if (command.targetX >= map->getWidth() || command.targetY >= map->getHeight())
+				{
+					throw std::out_of_range("March target is out of map bounds");
+				}
+
 				auto* unit = map->getUnitById(command.unitId);
 				if (unit)
 				{

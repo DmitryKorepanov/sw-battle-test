@@ -6,6 +6,7 @@
 #include "Types.hpp"
 
 #include <memory>
+#include <stdexcept>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -64,15 +65,15 @@ namespace sw::core
 		}
 
 		template <typename T>
-		std::shared_ptr<T> getComponent()
+		T* getComponent()
 		{
-			return _components.get<T>();
+			return _components.getPtr<T>();
 		}
 
 		template <typename T>
-		std::shared_ptr<const T> getComponent() const
+		const T* getComponent() const
 		{
-			return _components.get<T>();
+			return _components.getPtr<T>();
 		}
 
 		template <typename T>
@@ -85,6 +86,10 @@ namespace sw::core
 
 		void addBehavior(std::unique_ptr<IBehavior> behavior)
 		{
+			if (!behavior)
+			{
+				throw std::invalid_argument("Unit::addBehavior: behavior must not be null");
+			}
 			_behaviors.push_back(std::move(behavior));
 		}
 

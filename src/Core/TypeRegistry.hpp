@@ -135,6 +135,14 @@ namespace sw::core
 
 		template <typename T>
 		[[nodiscard]]
+		T* getPtr()
+		{
+			auto ptr = get<T>();
+			return ptr ? ptr.get() : nullptr;
+		}
+
+		template <typename T>
+		[[nodiscard]]
 		std::shared_ptr<const T> get() const
 		{
 			if (auto it = _instances.find(typeIndex<T>()); it != _instances.end())
@@ -142,6 +150,14 @@ namespace sw::core
 				return std::static_pointer_cast<const T>(it->second.instance);
 			}
 			return nullptr;
+		}
+
+		template <typename T>
+		[[nodiscard]]
+		const T* getPtr() const
+		{
+			auto ptr = get<T>();
+			return ptr ? ptr.get() : nullptr;
 		}
 
 		template <typename T>

@@ -26,7 +26,7 @@ namespace sw::features
 
 		void execute(core::Unit& unit, core::IGameWorld& world, core::IGameEvents& events) override
 		{
-			const auto strength = unit.getComponent<StrengthComponent>();
+			const auto* strength = unit.getComponent<StrengthComponent>();
 			if (!strength)
 			{
 				return;

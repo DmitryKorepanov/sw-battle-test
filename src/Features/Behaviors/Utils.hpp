@@ -104,7 +104,7 @@ namespace sw::features::utils
 			return;
 		}
 
-		auto hp = target->getComponent<HealthComponent>();
+		auto* hp = target->getComponent<HealthComponent>();
 		if (!hp)
 		{
 			return;
