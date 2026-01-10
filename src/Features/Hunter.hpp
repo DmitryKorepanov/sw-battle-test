@@ -11,8 +11,8 @@ namespace sw::features
 	class Hunter : public core::Unit
 	{
 	public:
-		Hunter(core::UnitId id, core::Position pos, uint32_t hp, uint32_t agility, uint32_t strength, uint32_t range) :
-				Unit(id, pos)
+		Hunter(core::UnitId id, uint32_t hp, uint32_t agility, uint32_t strength, uint32_t range) :
+				Unit(id)
 		{
 			addComponent<HealthComponent>(hp);
 			addComponent<StrengthComponent>(strength);

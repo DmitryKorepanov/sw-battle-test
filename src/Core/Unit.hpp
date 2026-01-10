@@ -13,31 +13,18 @@
 
 namespace sw::core
 {
-	class GameWorld;  // Forward decl
-
 	class Unit
 	{
 	private:
-		// Allow GameWorld to access setPosition to maintain grid consistency.
-		// Behaviors should use world.moveUnit() instead of modifying unit directly.
-		friend class GameWorld;
-
 		UnitId _id;
-		Position _position;
 		bool _isDead{false};
 
 		TypeRegistry _components;
 		std::vector<std::unique_ptr<IBehavior>> _behaviors;
 
-		void setPosition(Position pos) noexcept
-		{
-			_position = pos;
-		}
-
 	public:
-		Unit(UnitId id, Position pos) :
-				_id(id),
-				_position(pos)
+		explicit Unit(UnitId id) :
+				_id(id)
 		{}
 
 		virtual ~Unit() = default;
@@ -46,12 +33,6 @@ namespace sw::core
 		UnitId getId() const noexcept
 		{
 			return _id;
-		}
-
-		[[nodiscard]]
-		Position getPosition() const noexcept
-		{
-			return _position;
 		}
 
 		// === Components ===

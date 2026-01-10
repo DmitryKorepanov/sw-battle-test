@@ -14,13 +14,12 @@ namespace sw::features
 	private:
 		[[nodiscard]]
 		static bool tryGetNextPos(
-			const core::Unit& unit,
+			core::Position pos,
 			const core::IGameWorld& world,
 			const MarchComponent& march,
 			core::Position& outNextPos)
 		{
 			const auto target = march.target;
-			const auto pos = unit.getPosition();
 
 			// Caller handles "already at target" (completion).
 			if (pos == target)
@@ -70,14 +69,21 @@ namespace sw::features
 				return false;
 			}
 
+			auto posOpt = world.getUnitPosition(unit.getId());
+			if (!posOpt)
+			{
+				return false;
+			}
+			core::Position pos = *posOpt;
+
 			// If already at target -> can execute (to finish)
-			if (unit.getPosition() == march->target)
+			if (pos == march->target)
 			{
 				return true;
 			}
 
 			core::Position nextPos{};
-			return tryGetNextPos(unit, world, *march, nextPos);
+			return tryGetNextPos(pos, world, *march, nextPos);
 		}
 
 		void execute(core::Unit& unit, core::IGameWorld& world, core::IGameEvents& events) override
@@ -88,8 +94,14 @@ namespace sw::features
 				return;
 			}
 
+			auto posOpt = world.getUnitPosition(unit.getId());
+			if (!posOpt)
+			{
+				return;
+			}
+
 			auto target = march->target;
-			auto pos = unit.getPosition();
+			auto pos = *posOpt;
 
 			// Check if already at target (start of turn or immediate completion)
 			if (pos == target)
@@ -100,7 +112,7 @@ namespace sw::features
 			}
 
 			core::Position nextPos{};
-			if (!tryGetNextPos(unit, world, *march, nextPos))
+			if (!tryGetNextPos(pos, world, *march, nextPos))
 			{
 				return;
 			}

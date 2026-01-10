@@ -4,6 +4,7 @@
 
 #include <functional>
 #include <memory>
+#include <optional>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -21,6 +22,7 @@ namespace sw::core
 		// Lookup
 		std::vector<std::vector<Unit*>> _grid;
 		std::unordered_map<UnitId, Unit*> _unitById;
+		std::unordered_map<UnitId, Position> _unitPositions;
 
 		size_t getGridIndex(Position pos) const;
 		bool isValid(Position pos) const;
@@ -39,10 +41,12 @@ namespace sw::core
 		const Unit* getUnitById(UnitId id) const override;
 		Unit* getUnitById(UnitId id) override;
 
+		std::optional<Position> getUnitPosition(UnitId id) const override;
+
 		bool moveUnit(UnitId unitId, Position to) override;
 
 		// --- GameWorld API (simulation/orchestration helpers) ---
-		void addUnit(std::unique_ptr<Unit> unit);
+		void addUnit(std::unique_ptr<Unit> unit, Position pos);
 
 		[[nodiscard]]
 		size_t getUnitCount() const noexcept;

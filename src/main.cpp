@@ -126,9 +126,9 @@ int main(int argc, char** argv)
 				}
 
 				auto unit = std::make_unique<Swordsman>(
-					command.unitId, pos, command.hp, command.strength);
+					command.unitId, command.hp, command.strength);
 
-				map->addUnit(std::move(unit));
+				map->addUnit(std::move(unit), pos);
 				eventAdapter->onUnitSpawned(command.unitId, "Swordsman", pos);
 			})
 		.add<io::SpawnHunter>(
@@ -147,13 +147,12 @@ int main(int argc, char** argv)
 
 				auto unit = std::make_unique<Hunter>(
 					command.unitId,
-					pos,
 					command.hp,
 					command.agility,
 					command.strength,
 					command.range);
 
-				map->addUnit(std::move(unit));
+				map->addUnit(std::move(unit), pos);
 				eventAdapter->onUnitSpawned(command.unitId, "Hunter", pos);
 			})
 		.add<io::March>(
@@ -172,9 +171,13 @@ int main(int argc, char** argv)
 				auto* unit = map->getUnitById(command.unitId);
 				if (unit)
 				{
+					auto posOpt = map->getUnitPosition(command.unitId);
 					unit->template addComponent<MarchComponent>(Position{command.targetX, command.targetY});
-					eventAdapter->onMarchStarted(
-						command.unitId, unit->getPosition(), Position{command.targetX, command.targetY});
+					if (posOpt)
+					{
+						eventAdapter->onMarchStarted(
+							command.unitId, *posOpt, Position{command.targetX, command.targetY});
+					}
 				}
 			});
 

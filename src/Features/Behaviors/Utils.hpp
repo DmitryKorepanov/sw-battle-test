@@ -21,7 +21,13 @@ namespace sw::features::utils
 		{
 			std::vector<UnitPtrT> targets;
 			using UnitT = std::remove_pointer_t<UnitPtrT>;
-			core::Position pos = unit.getPosition();
+
+			auto posOpt = world.getUnitPosition(unit.getId());
+			if (!posOpt)
+			{
+				return targets;
+			}
+			core::Position pos = *posOpt;
 
 			int32_t minX = static_cast<int32_t>(pos.x) - static_cast<int32_t>(maxRange);
 			int32_t maxX = static_cast<int32_t>(pos.x) + static_cast<int32_t>(maxRange);

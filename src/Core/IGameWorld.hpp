@@ -3,6 +3,7 @@
 #include "Types.hpp"
 
 #include <functional>
+#include <optional>
 
 namespace sw::core
 {
@@ -26,6 +27,8 @@ namespace sw::core
 
 		virtual const Unit* getUnitById(UnitId id) const = 0;
 		virtual Unit* getUnitById(UnitId id) = 0;
+
+		virtual std::optional<Position> getUnitPosition(UnitId id) const = 0;
 
 		// Actions
 		virtual bool moveUnit(UnitId unitId, Position to) = 0;

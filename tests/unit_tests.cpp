@@ -110,14 +110,14 @@ namespace
 		GameWorld world(5, 5);
 		TestEvents events;
 
-		auto u1 = std::make_unique<Swordsman>(1, Position{0, 0}, 10, 1);
+		auto u1 = std::make_unique<Swordsman>(1, 10, 1);
 		u1->addComponent<MarchComponent>(Position{0, 2});
 		
-		auto u2 = std::make_unique<Swordsman>(2, Position{2, 2}, 10, 1);
+		auto u2 = std::make_unique<Swordsman>(2, 10, 1);
 		u2->addComponent<MarchComponent>(Position{2, 0});
 
-		world.addUnit(std::move(u1));
-		world.addUnit(std::move(u2));
+		world.addUnit(std::move(u1), Position{0, 0});
+		world.addUnit(std::move(u2), Position{2, 2});
 
 		// Simulate the loop from main.cpp
 		world.forEachUnit([&](Unit& unit) {
@@ -142,15 +142,17 @@ namespace
 		Position start{0, 0};
 		Position target{2, 2};
 
-		auto u1 = std::make_unique<Swordsman>(1, start, 10, 1);
+		auto u1 = std::make_unique<Swordsman>(1, 10, 1);
 		u1->addComponent<MarchComponent>(target);
-		world.addUnit(std::move(u1));
+		world.addUnit(std::move(u1), start);
 
 		world.getUnitById(1)->playTurn(world, events);
 
 		TEST_ASSERT_EQ(events.moves.size(), (size_t)1);
 		
-		Position newPos = world.getUnitById(1)->getPosition();
+		auto newPosOpt = world.getUnitPosition(1);
+		TEST_ASSERT(newPosOpt.has_value());
+		Position newPos = *newPosOpt;
 		
 		// Metric: Chebyshev distance (max of dx, dy) should decrease
 		int startDist = std::max(std::abs((int)target.x - (int)start.x), std::abs((int)target.y - (int)start.y));
@@ -170,21 +172,23 @@ namespace
 		TestEvents events;
 
 		// Mover at 0,0 wants to go to 2,0
-		auto mover = std::make_unique<Swordsman>(1, Position{0, 0}, 10, 1);
+		auto mover = std::make_unique<Swordsman>(1, 10, 1);
 		mover->addComponent<MarchComponent>(Position{2, 0});
 		mover->removeComponent<StrengthComponent>(); // Disable attack
 
 		// Blocker at 1,0 (Direct path)
-		auto blocker = std::make_unique<Swordsman>(2, Position{1, 0}, 10, 1);
+		auto blocker = std::make_unique<Swordsman>(2, 10, 1);
 
-		world.addUnit(std::move(mover));
-		world.addUnit(std::move(blocker));
+		world.addUnit(std::move(mover), Position{0, 0});
+		world.addUnit(std::move(blocker), Position{1, 0});
 
 		bool acted = world.getUnitById(1)->playTurn(world, events);
 
 		// Assert: The unit might wait (acted=false) or flank (acted=true, moved to 0,1 or 1,1 if map 2d)
 		// But CRITICAL: It must NOT be at 1,0
-		Position currentPos = world.getUnitById(1)->getPosition();
+		auto currentPosOpt = world.getUnitPosition(1);
+		TEST_ASSERT(currentPosOpt.has_value());
+		Position currentPos = *currentPosOpt;
 		TEST_ASSERT(currentPos != (Position{1, 0}));
 		
 		// In current implementation, it waits.
@@ -203,13 +207,13 @@ namespace
 		TestEvents events;
 
 		// Hunter at 0,0. Target at 2,0. Range 3.
-		auto hunter = std::make_unique<Hunter>(1, Position{0, 0}, 10, 5, 1, 3);
+		auto hunter = std::make_unique<Hunter>(1, 10, 5, 1, 3);
 		hunter->removeComponent<AgilityComponent>(); // BREAK IT
 		
-		auto target = std::make_unique<Swordsman>(2, Position{2, 0}, 10, 1);
+		auto target = std::make_unique<Swordsman>(2, 10, 1);
 
-		world.addUnit(std::move(hunter));
-		world.addUnit(std::move(target));
+		world.addUnit(std::move(hunter), Position{0, 0});
+		world.addUnit(std::move(target), Position{2, 0});
 
 		bool acted = world.getUnitById(1)->playTurn(world, events);
 
@@ -225,11 +229,11 @@ namespace
 		GameWorld world(3, 1);
 		TestEvents events;
 
-		auto s1 = std::make_unique<Swordsman>(1, Position{0, 0}, 10, 5);
-		auto s2 = std::make_unique<Swordsman>(2, Position{1, 0}, 10, 1);
+		auto s1 = std::make_unique<Swordsman>(1, 10, 5);
+		auto s2 = std::make_unique<Swordsman>(2, 10, 1);
 
-		world.addUnit(std::move(s1));
-		world.addUnit(std::move(s2));
+		world.addUnit(std::move(s1), Position{0, 0});
+		world.addUnit(std::move(s2), Position{1, 0});
 
 		world.getUnitById(1)->playTurn(world, events);
 
@@ -248,11 +252,11 @@ namespace
 		GameWorld world(3, 1);
 		TestEvents events;
 
-		auto s1 = std::make_unique<Swordsman>(1, Position{0, 0}, 10, 10);
-		auto s2 = std::make_unique<Swordsman>(2, Position{1, 0}, 10, 1); // 10 HP
+		auto s1 = std::make_unique<Swordsman>(1, 10, 10);
+		auto s2 = std::make_unique<Swordsman>(2, 10, 1); // 10 HP
 
-		world.addUnit(std::move(s1));
-		world.addUnit(std::move(s2));
+		world.addUnit(std::move(s1), Position{0, 0});
+		world.addUnit(std::move(s2), Position{1, 0});
 
 		// Attack kills unit 2
 		world.getUnitById(1)->playTurn(world, events);
@@ -277,13 +281,13 @@ namespace
 		using namespace sw::core;
 		using namespace sw::features;
 		GameWorld world(3, 1);
-		auto attacker = std::make_unique<Swordsman>(1, Position{0, 0}, 10, 1);
-		auto target = std::make_unique<Swordsman>(2, Position{1, 0}, 10, 1);
+		auto attacker = std::make_unique<Swordsman>(1, 10, 1);
+		auto target = std::make_unique<Swordsman>(2, 10, 1);
 		
 		target->removeComponent<HealthComponent>(); // Should become untargetable
 		
-		world.addUnit(std::move(attacker));
-		world.addUnit(std::move(target));
+		world.addUnit(std::move(attacker), Position{0, 0});
+		world.addUnit(std::move(target), Position{1, 0});
 		
 		auto targets = utils::getTargetsInRange(*world.getUnitById(1), world, 1, 1);
 		TEST_ASSERT(targets.empty());
@@ -294,7 +298,7 @@ namespace
 		using namespace sw::features;
 		using namespace sw::core;
 
-		Swordsman unit(1, Position{0, 0}, 10, 1);
+		Swordsman unit(1, 10, 1);
 		bool threw = false;
 		try {
 			unit.addBehavior(nullptr);
