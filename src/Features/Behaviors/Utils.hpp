@@ -117,15 +117,12 @@ namespace sw::features::utils
 			return;
 		}
 
-		hp->currentHp -= static_cast<int32_t>(damage);
-
-		if (hp->currentHp <= 0)
+		if (hp->takeDamage(damage))
 		{
 			target->setDead(true);
 		}
 
-		uint32_t reportHp = (hp->currentHp < 0) ? 0 : static_cast<uint32_t>(hp->currentHp);
-		events.onUnitAttacked(attacker.getId(), target->getId(), damage, reportHp);
+		events.onUnitAttacked(attacker.getId(), target->getId(), damage, hp->getHp());
 	}
 
 	inline bool isCellBlocked(const core::IGameWorld& world, core::Position pos)

@@ -7,6 +7,5 @@
 - **Concrete World Dependency in Runner:** The simulation runner in `main.cpp` uses `GameWorld` concrete methods (`addUnit`, `forEachUnit`, `removeDeadUnits`, etc.). `IGameWorld` exists and includes `getUnitById`, but orchestration is not yet fully expressed via interfaces.
 
 ## Implementation Details
-- **Damage Encapsulation:** `utils::dealDamage` modifies `HealthComponent` directly and also sets `Unit::setDead(true)`. While it centralizes logic, moving this into `HealthComponent::applyDamage(...)` (or a dedicated damage system) would improve encapsulation and reduce coupling.
 - **Randomness:** The `Random` class uses a global generator (`static std::mt19937`). For deterministic replayability or better testing, this should be replaced with an injected RNG service (e.g., passed via simulation context/world/services) with an explicit seed.
 - **Movement Can Get Stuck:** The current marching logic does not attempt to route around blocking units. If the "next step" toward the target is occupied, the unit stops and may remain stuck forever. This is an intentional simplification right now, but it should be addressed (e.g., by trying alternative neighboring steps, or by introducing a simple pathing/avoidance rule).

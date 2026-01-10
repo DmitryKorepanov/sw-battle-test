@@ -7,13 +7,31 @@
 
 namespace sw::features
 {
-	struct HealthComponent : public core::IComponent
+	class HealthComponent : public core::IComponent
 	{
-		int32_t currentHp;
-
+	public:
 		explicit HealthComponent(uint32_t hp) :
-				currentHp(static_cast<int32_t>(hp))
+				_currentHp(static_cast<int32_t>(hp))
 		{}
+
+		bool takeDamage(uint32_t damage)
+		{
+			_currentHp -= static_cast<int32_t>(damage);
+			return _currentHp <= 0;
+		}
+
+		[[nodiscard]] uint32_t getHp() const
+		{
+			return _currentHp < 0 ? 0 : static_cast<uint32_t>(_currentHp);
+		}
+
+		[[nodiscard]] bool isDead() const
+		{
+			return _currentHp <= 0;
+		}
+
+	private:
+		int32_t _currentHp;
 	};
 
 	struct StrengthComponent : public core::IComponent
