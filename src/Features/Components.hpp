@@ -51,4 +51,10 @@ namespace sw::features
 				target(t)
 		{}
 	};
+
+	struct BlockerComponent : public core::IComponent
+	{
+		// Marker component: indicates this unit blocks movement.
+		BlockerComponent() = default;
+	};
 }

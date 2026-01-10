@@ -5,6 +5,7 @@
 #include <functional>
 #include <memory>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace sw::core
@@ -18,7 +19,7 @@ namespace sw::core
 		// Ownership
 		std::vector<std::unique_ptr<Unit>> _units;
 		// Lookup
-		std::vector<Unit*> _grid;
+		std::vector<std::vector<Unit*>> _grid;
 		std::unordered_map<UnitId, Unit*> _unitById;
 
 		size_t getGridIndex(Position pos) const;
@@ -31,8 +32,9 @@ namespace sw::core
 		uint32_t getWidth() const override;
 		uint32_t getHeight() const override;
 
-		const Unit* getUnitAt(Position pos) const override;
-		Unit* getUnitAt(Position pos) override;
+		void forEachUnitAt(Position pos, const std::function<void(const Unit&)>& visitor) const override;
+		void forEachUnitAt(Position pos, const std::function<void(Unit&)>& visitor) override;
+		bool anyUnitAt(Position pos, const std::function<bool(const Unit&)>& predicate) const override;
 
 		const Unit* getUnitById(UnitId id) const override;
 		Unit* getUnitById(UnitId id) override;
@@ -42,13 +44,28 @@ namespace sw::core
 		// --- GameWorld API (simulation/orchestration helpers) ---
 		void addUnit(std::unique_ptr<Unit> unit);
 
-		void forEachUnit(const std::function<void(Unit&)>& visitor);
-		void forEachUnit(const std::function<void(const Unit&)>& visitor) const;
-
 		[[nodiscard]]
 		size_t getUnitCount() const noexcept;
 
 		// Returns IDs of units removed
 		std::vector<UnitId> removeDeadUnits();
+
+		template <typename TVisitor>
+		void forEachUnit(TVisitor&& visitor)
+		{
+			for (auto& unit : _units)
+			{
+				visitor(*unit);
+			}
+		}
+
+		template <typename TVisitor>
+		void forEachUnit(TVisitor&& visitor) const
+		{
+			for (const auto& unit : _units)
+			{
+				visitor(*unit);
+			}
+		}
 	};
 }

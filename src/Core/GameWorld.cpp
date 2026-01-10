@@ -11,7 +11,7 @@ namespace sw::core
 			_width(width),
 			_height(height)
 	{
-		_grid.resize(width * height, nullptr);
+		_grid.resize(width * height);
 	}
 
 	uint32_t GameWorld::getWidth() const
@@ -36,41 +36,64 @@ namespace sw::core
 			throw std::out_of_range("Unit position out of bounds");
 		}
 
-		size_t index = getGridIndex(unit->getPosition());
-		if (_grid[index] != nullptr)
-		{
-			throw std::runtime_error("Position already occupied");
-		}
-
 		if (_unitById.find(unit->getId()) != _unitById.end())
 		{
 			throw std::runtime_error("Unit ID already exists");
 		}
 
 		// Update lookups
-		_grid[index] = unit.get();
+		size_t index = getGridIndex(unit->getPosition());
+		_grid[index].push_back(unit.get());
 		_unitById[unit->getId()] = unit.get();
 
 		// Store ownership
 		_units.push_back(std::move(unit));
 	}
 
-	const Unit* GameWorld::getUnitAt(Position pos) const
+	void GameWorld::forEachUnitAt(Position pos, const std::function<void(const Unit&)>& visitor) const
 	{
 		if (!isValid(pos))
 		{
-			return nullptr;
+			return;
 		}
-		return _grid[getGridIndex(pos)];
+
+		const auto& cell = _grid[getGridIndex(pos)];
+		for (const auto* unit : cell)
+		{
+			visitor(*unit);
+		}
 	}
 
-	Unit* GameWorld::getUnitAt(Position pos)
+	void GameWorld::forEachUnitAt(Position pos, const std::function<void(Unit&)>& visitor)
 	{
 		if (!isValid(pos))
 		{
-			return nullptr;
+			return;
 		}
-		return _grid[getGridIndex(pos)];
+
+		auto& cell = _grid[getGridIndex(pos)];
+		for (auto* unit : cell)
+		{
+			visitor(*unit);
+		}
+	}
+
+	bool GameWorld::anyUnitAt(Position pos, const std::function<bool(const Unit&)>& predicate) const
+	{
+		if (!isValid(pos))
+		{
+			return false;
+		}
+
+		const auto& cell = _grid[getGridIndex(pos)];
+		for (const auto* unit : cell)
+		{
+			if (predicate(*unit))
+			{
+				return true;
+			}
+		}
+		return false;
 	}
 
 	const Unit* GameWorld::getUnitById(UnitId id) const
@@ -83,22 +106,6 @@ namespace sw::core
 	{
 		auto it = _unitById.find(id);
 		return (it != _unitById.end()) ? it->second : nullptr;
-	}
-
-	void GameWorld::forEachUnit(const std::function<void(Unit&)>& visitor)
-	{
-		for (auto& unit : _units)
-		{
-			visitor(*unit);
-		}
-	}
-
-	void GameWorld::forEachUnit(const std::function<void(const Unit&)>& visitor) const
-	{
-		for (const auto& unit : _units)
-		{
-			visitor(*unit);
-		}
 	}
 
 	size_t GameWorld::getUnitCount() const noexcept
@@ -122,15 +129,20 @@ namespace sw::core
 		Unit* unit = it->second;
 		Position from = unit->getPosition();
 
-		size_t toIndex = getGridIndex(to);
-		if (_grid[toIndex] != nullptr)
-		{
-			return false;  // Blocked
-		}
-
 		// Update grid
-		_grid[getGridIndex(from)] = nullptr;
-		_grid[toIndex] = unit;
+		// 1. Remove from old
+		size_t fromIndex = getGridIndex(from);
+		auto& oldCell = _grid[fromIndex];
+		auto itGrid = std::find(oldCell.begin(), oldCell.end(), unit);
+		if (itGrid == oldCell.end())
+		{
+			throw std::runtime_error("GameWorld grid out of sync (unit not found in its current cell)");
+		}
+		oldCell.erase(itGrid);
+
+		// 2. Add to new
+		size_t toIndex = getGridIndex(to);
+		_grid[toIndex].push_back(unit);
 
 		// Update unit
 		unit->setPosition(to);
@@ -154,10 +166,13 @@ namespace sw::core
 				if (isValid(unit->getPosition()))
 				{
 					size_t index = getGridIndex(unit->getPosition());
-					if (_grid[index] == unit.get())
+					auto& cell = _grid[index];
+					auto it = std::find(cell.begin(), cell.end(), unit.get());
+					if (it == cell.end())
 					{
-						_grid[index] = nullptr;
+						throw std::runtime_error("GameWorld grid out of sync (dead unit not found in its cell)");
 					}
+					cell.erase(it);
 				}
 			}
 		}

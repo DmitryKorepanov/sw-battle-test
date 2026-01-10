@@ -16,6 +16,7 @@ namespace sw::features
 		{
 			addComponent<HealthComponent>(hp);
 			addComponent<StrengthComponent>(strength);
+			addComponent<BlockerComponent>();
 
 			addBehavior(std::make_unique<MeleeAttackBehavior>());
 			addBehavior(std::make_unique<MoveBehavior>());

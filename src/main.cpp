@@ -1,5 +1,6 @@
 #include "Core/GameWorld.hpp"
 #include "Core/IGameEvents.hpp"
+#include "Features/Behaviors/Utils.hpp"
 #include "Features/Components.hpp"
 #include "Features/Hunter.hpp"
 #include "Features/Swordsman.hpp"
@@ -118,11 +119,17 @@ int main(int argc, char** argv)
 					throw std::runtime_error("Map not created");
 				}
 
+				Position pos{command.x, command.y};
+				if (sw::features::utils::isCellBlocked(*map, pos))
+				{
+					throw std::runtime_error("Spawn position blocked");
+				}
+
 				auto unit = std::make_unique<Swordsman>(
-					command.unitId, Position{command.x, command.y}, command.hp, command.strength);
+					command.unitId, pos, command.hp, command.strength);
 
 				map->addUnit(std::move(unit));
-				eventAdapter->onUnitSpawned(command.unitId, "Swordsman", Position{command.x, command.y});
+				eventAdapter->onUnitSpawned(command.unitId, "Swordsman", pos);
 			})
 		.add<io::SpawnHunter>(
 			[&](auto command)
@@ -132,16 +139,22 @@ int main(int argc, char** argv)
 					throw std::runtime_error("Map not created");
 				}
 
+				Position pos{command.x, command.y};
+				if (sw::features::utils::isCellBlocked(*map, pos))
+				{
+					throw std::runtime_error("Spawn position blocked");
+				}
+
 				auto unit = std::make_unique<Hunter>(
 					command.unitId,
-					Position{command.x, command.y},
+					pos,
 					command.hp,
 					command.agility,
 					command.strength,
 					command.range);
 
 				map->addUnit(std::move(unit));
-				eventAdapter->onUnitSpawned(command.unitId, "Hunter", Position{command.x, command.y});
+				eventAdapter->onUnitSpawned(command.unitId, "Hunter", pos);
 			})
 		.add<io::March>(
 			[&](auto command)

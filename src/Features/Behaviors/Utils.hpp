@@ -20,6 +20,7 @@ namespace sw::features::utils
 			const core::Unit& unit, WorldT& world, uint32_t minRange, uint32_t maxRange, TFilter filter)
 		{
 			std::vector<UnitPtrT> targets;
+			using UnitT = std::remove_pointer_t<UnitPtrT>;
 			core::Position pos = unit.getPosition();
 
 			int32_t minX = static_cast<int32_t>(pos.x) - static_cast<int32_t>(maxRange);
@@ -48,11 +49,16 @@ namespace sw::features::utils
 
 					if (dist >= minRange && dist <= maxRange)
 					{
-						auto* other = world.getUnitAt(p);
-						if (other && filter(other))
-						{
-							targets.push_back(other);
-						}
+						world.forEachUnitAt(
+							p,
+							[&](UnitT& otherRef)
+							{
+								UnitPtrT other = &otherRef;
+								if (filter(other))
+								{
+									targets.push_back(other);
+								}
+							});
 					}
 				}
 			}
@@ -119,5 +125,11 @@ namespace sw::features::utils
 
 		uint32_t reportHp = (hp->currentHp < 0) ? 0 : static_cast<uint32_t>(hp->currentHp);
 		events.onUnitAttacked(attacker.getId(), target->getId(), damage, reportHp);
+	}
+
+	inline bool isCellBlocked(const core::IGameWorld& world, core::Position pos)
+	{
+		return world.anyUnitAt(
+			pos, [](const core::Unit& unit) { return unit.getComponent<BlockerComponent>() != nullptr; });
 	}
 }

@@ -18,6 +18,7 @@ namespace sw::features
 			addComponent<StrengthComponent>(strength);
 			addComponent<AgilityComponent>(agility);
 			addComponent<RangeComponent>(range);
+			addComponent<BlockerComponent>();
 
 			addBehavior(std::make_unique<RangeAttackBehavior>());
 			addBehavior(std::make_unique<MeleeAttackBehavior>());

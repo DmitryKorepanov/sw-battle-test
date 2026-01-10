@@ -5,6 +5,7 @@
 #include "../../Core/IGameWorld.hpp"
 #include "../../Core/Unit.hpp"
 #include "../Components.hpp"
+#include "Utils.hpp"
 
 namespace sw::features
 {
@@ -50,8 +51,8 @@ namespace sw::features
 
 			const core::Position nextPos{static_cast<uint32_t>(nextX), static_cast<uint32_t>(nextY)};
 
-			// Blockage check (current rules: units occupy cells)
-			if (world.getUnitAt(nextPos) != nullptr)
+			// Blockage check: check if any unit at nextPos is a blocker
+			if (utils::isCellBlocked(world, nextPos))
 			{
 				return false;
 			}

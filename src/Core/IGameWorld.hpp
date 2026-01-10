@@ -2,6 +2,8 @@
 
 #include "Types.hpp"
 
+#include <functional>
+
 namespace sw::core
 {
 	class Unit;	 // Forward declaration
@@ -16,8 +18,11 @@ namespace sw::core
 		virtual uint32_t getHeight() const = 0;
 
 		// Unit queries
-		virtual const Unit* getUnitAt(Position pos) const = 0;
-		virtual Unit* getUnitAt(Position pos) = 0;
+		virtual void forEachUnitAt(Position pos, const std::function<void(const Unit&)>& visitor) const = 0;
+		virtual void forEachUnitAt(Position pos, const std::function<void(Unit&)>& visitor) = 0;
+
+		// Returns true if any unit in the cell satisfies predicate
+		virtual bool anyUnitAt(Position pos, const std::function<bool(const Unit&)>& predicate) const = 0;
 
 		virtual const Unit* getUnitById(UnitId id) const = 0;
 		virtual Unit* getUnitById(UnitId id) = 0;
