@@ -107,15 +107,13 @@ namespace sw::features
 			}
 
 			const auto from = pos;
-			if (world.moveUnit(unit.getId(), nextPos))
-			{
-				events.onUnitMoved(unit.getId(), from, nextPos);
+			world.moveUnit(unit.getId(), nextPos);
+			events.onUnitMoved(unit.getId(), from, nextPos);
 
-				if (nextPos == target)
-				{
-					events.onMarchEnded(unit.getId(), target);
-					unit.removeComponent<MarchComponent>();
-				}
+			if (nextPos == target)
+			{
+				events.onMarchEnded(unit.getId(), target);
+				unit.removeComponent<MarchComponent>();
 			}
 		}
 	};

@@ -119,7 +119,7 @@ namespace sw::core
 		return _units.size();
 	}
 
-	bool GameWorld::moveUnit(UnitId unitId, Position to)
+	void GameWorld::moveUnit(UnitId unitId, Position to)
 	{
 		if (!isValid(to))
 		{
@@ -147,8 +147,6 @@ namespace sw::core
 
 		// Update position
 		posRef = to;
-
-		return true;
 	}
 
 	std::vector<UnitId> GameWorld::removeDeadUnits()

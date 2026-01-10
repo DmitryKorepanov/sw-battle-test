@@ -29,6 +29,6 @@ namespace sw::core
 		virtual Position getUnitPosition(UnitId id) const = 0;
 
 		// Actions
-		virtual bool moveUnit(UnitId unitId, Position to) = 0;
+		virtual void moveUnit(UnitId unitId, Position to) = 0;
 	};
 }

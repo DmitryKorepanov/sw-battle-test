@@ -43,7 +43,7 @@ namespace sw::core
 
 		Position getUnitPosition(UnitId id) const override;
 
-		bool moveUnit(UnitId unitId, Position to) override;
+		void moveUnit(UnitId unitId, Position to) override;
 
 		// --- GameWorld API (simulation/orchestration helpers) ---
 		void addUnit(std::unique_ptr<Unit> unit, Position pos);

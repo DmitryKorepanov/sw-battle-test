@@ -198,42 +198,50 @@ int main(int argc, char** argv)
 	// Increment tick before simulation starts (Setup was tick 1)
 	tick++;
 
-	while (true)
+	try
 	{
-		bool anyAction = false;
+		while (true)
+		{
+			bool anyAction = false;
 
-		sw::core::IGameEvents& events = *eventAdapter;
+			sw::core::IGameEvents& events = *eventAdapter;
 
-		map->forEachUnit(
-			[&](sw::core::Unit& unit)
-			{
-				if (unit.playTurn(*map, events))
+			map->forEachUnit(
+				[&](sw::core::Unit& unit)
 				{
-					anyAction = true;
-				}
-			});
+					if (unit.playTurn(*map, events))
+					{
+						anyAction = true;
+					}
+				});
 
-		// 2. Cleanup Dead
-		auto deadUnits = map->removeDeadUnits();
-		for (const auto& id : deadUnits)
-		{
-			events.onUnitDied(id);
+			// 2. Cleanup Dead
+			auto deadUnits = map->removeDeadUnits();
+			for (const auto& id : deadUnits)
+			{
+				events.onUnitDied(id);
+			}
+
+			// 3. Check End Conditions
+			const size_t aliveCount = map->getUnitCount();
+
+			if (aliveCount <= 1)
+			{
+				break;
+			}
+
+			if (!anyAction)
+			{
+				break;
+			}
+
+			tick++;
 		}
-
-		// 3. Check End Conditions
-		const size_t aliveCount = map->getUnitCount();
-
-		if (aliveCount <= 1)
-		{
-			break;
-		}
-
-		if (!anyAction)
-		{
-			break;
-		}
-
-		tick++;
+	}
+	catch (const std::exception& e)
+	{
+		std::cerr << "Simulation error: " << e.what() << std::endl;
+		return 1;
 	}
 
 	return 0;
