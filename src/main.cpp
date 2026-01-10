@@ -22,6 +22,7 @@
 #include <functional>
 #include <iostream>
 #include <memory>
+#include <stdexcept>
 #include <string_view>
 #include <vector>
 
@@ -168,17 +169,10 @@ int main(int argc, char** argv)
 					throw std::out_of_range("March target is out of map bounds");
 				}
 
-				auto* unit = map->getUnitById(command.unitId);
-				if (unit)
-				{
-					auto posOpt = map->getUnitPosition(command.unitId);
-					unit->template addComponent<MarchComponent>(Position{command.targetX, command.targetY});
-					if (posOpt)
-					{
-						eventAdapter->onMarchStarted(
-							command.unitId, *posOpt, Position{command.targetX, command.targetY});
-					}
-				}
+				auto& unit = map->getUnitById(command.unitId);
+				unit.template addComponent<MarchComponent>(Position{command.targetX, command.targetY});
+				auto pos = map->getUnitPosition(command.unitId);
+				eventAdapter->onMarchStarted(command.unitId, pos, Position{command.targetX, command.targetY});
 			});
 
 	// --- Parse Scenario ---

@@ -3,8 +3,6 @@
 #include "Types.hpp"
 
 #include <functional>
-#include <optional>
-
 namespace sw::core
 {
 	class Unit;	 // Forward declaration
@@ -25,10 +23,10 @@ namespace sw::core
 		// Returns true if any unit in the cell satisfies predicate
 		virtual bool anyUnitAt(Position pos, const std::function<bool(const Unit&)>& predicate) const = 0;
 
-		virtual const Unit* getUnitById(UnitId id) const = 0;
-		virtual Unit* getUnitById(UnitId id) = 0;
+		virtual const Unit& getUnitById(UnitId id) const = 0;
+		virtual Unit& getUnitById(UnitId id) = 0;
 
-		virtual std::optional<Position> getUnitPosition(UnitId id) const = 0;
+		virtual Position getUnitPosition(UnitId id) const = 0;
 
 		// Actions
 		virtual bool moveUnit(UnitId unitId, Position to) = 0;

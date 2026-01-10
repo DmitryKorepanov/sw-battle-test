@@ -4,7 +4,6 @@
 
 #include <functional>
 #include <memory>
-#include <optional>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -29,6 +28,7 @@ namespace sw::core
 
 	public:
 		GameWorld(uint32_t width, uint32_t height);
+		~GameWorld() override;
 
 		// --- IGameWorld ---
 		uint32_t getWidth() const override;
@@ -38,10 +38,10 @@ namespace sw::core
 		void forEachUnitAt(Position pos, const std::function<void(Unit&)>& visitor) override;
 		bool anyUnitAt(Position pos, const std::function<bool(const Unit&)>& predicate) const override;
 
-		const Unit* getUnitById(UnitId id) const override;
-		Unit* getUnitById(UnitId id) override;
+		const Unit& getUnitById(UnitId id) const override;
+		Unit& getUnitById(UnitId id) override;
 
-		std::optional<Position> getUnitPosition(UnitId id) const override;
+		Position getUnitPosition(UnitId id) const override;
 
 		bool moveUnit(UnitId unitId, Position to) override;
 

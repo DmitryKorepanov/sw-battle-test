@@ -146,13 +146,11 @@ namespace
 		u1->addComponent<MarchComponent>(target);
 		world.addUnit(std::move(u1), start);
 
-		world.getUnitById(1)->playTurn(world, events);
+		world.getUnitById(1).playTurn(world, events);
 
 		TEST_ASSERT_EQ(events.moves.size(), (size_t)1);
 		
-		auto newPosOpt = world.getUnitPosition(1);
-		TEST_ASSERT(newPosOpt.has_value());
-		Position newPos = *newPosOpt;
+		Position newPos = world.getUnitPosition(1);
 		
 		// Metric: Chebyshev distance (max of dx, dy) should decrease
 		int startDist = std::max(std::abs((int)target.x - (int)start.x), std::abs((int)target.y - (int)start.y));
@@ -182,13 +180,11 @@ namespace
 		world.addUnit(std::move(mover), Position{0, 0});
 		world.addUnit(std::move(blocker), Position{1, 0});
 
-		bool acted = world.getUnitById(1)->playTurn(world, events);
+		bool acted = world.getUnitById(1).playTurn(world, events);
 
 		// Assert: The unit might wait (acted=false) or flank (acted=true, moved to 0,1 or 1,1 if map 2d)
 		// But CRITICAL: It must NOT be at 1,0
-		auto currentPosOpt = world.getUnitPosition(1);
-		TEST_ASSERT(currentPosOpt.has_value());
-		Position currentPos = *currentPosOpt;
+		Position currentPos = world.getUnitPosition(1);
 		TEST_ASSERT(currentPos != (Position{1, 0}));
 		
 		// In current implementation, it waits.
@@ -215,7 +211,7 @@ namespace
 		world.addUnit(std::move(hunter), Position{0, 0});
 		world.addUnit(std::move(target), Position{2, 0});
 
-		bool acted = world.getUnitById(1)->playTurn(world, events);
+		bool acted = world.getUnitById(1).playTurn(world, events);
 
 		TEST_ASSERT(!acted);
 		TEST_ASSERT(events.attacks.empty());
@@ -235,7 +231,7 @@ namespace
 		world.addUnit(std::move(s1), Position{0, 0});
 		world.addUnit(std::move(s2), Position{1, 0});
 
-		world.getUnitById(1)->playTurn(world, events);
+		world.getUnitById(1).playTurn(world, events);
 
 		TEST_ASSERT_EQ(events.attacks.size(), (size_t)1);
 		TEST_ASSERT_EQ(events.attacks[0].attacker, (UnitId)1);
@@ -259,11 +255,13 @@ namespace
 		world.addUnit(std::move(s2), Position{1, 0});
 
 		// Attack kills unit 2
-		world.getUnitById(1)->playTurn(world, events);
+		world.getUnitById(1).playTurn(world, events);
 		
-		auto* u2 = world.getUnitById(2);
-		TEST_ASSERT(u2->isDead());
-		TEST_ASSERT(events.deaths.empty()); // Not removed from world yet
+		{
+			auto& u2 = world.getUnitById(2);
+			TEST_ASSERT(u2.isDead());
+			TEST_ASSERT(events.deaths.empty()); // Not removed from world yet
+		}
 
 		// Cleanup phase
 		auto deadIds = world.removeDeadUnits();
@@ -271,7 +269,6 @@ namespace
 
 		TEST_ASSERT_EQ(events.deaths.size(), (size_t)1);
 		TEST_ASSERT_EQ(events.deaths[0], (UnitId)2);
-		TEST_ASSERT(world.getUnitById(2) == nullptr);
 	}
 
 	// --- Restored Tests ---
@@ -289,7 +286,7 @@ namespace
 		world.addUnit(std::move(attacker), Position{0, 0});
 		world.addUnit(std::move(target), Position{1, 0});
 		
-		auto targets = utils::getTargetsInRange(*world.getUnitById(1), world, 1, 1);
+		auto targets = utils::getTargetsInRange(world.getUnitById(1), world, 1, 1);
 		TEST_ASSERT(targets.empty());
 	}
 

@@ -14,6 +14,8 @@ namespace sw::core
 		_grid.resize(width * height);
 	}
 
+	GameWorld::~GameWorld() = default;
+
 	uint32_t GameWorld::getWidth() const
 	{
 		return _width;
@@ -97,26 +99,19 @@ namespace sw::core
 		return false;
 	}
 
-	const Unit* GameWorld::getUnitById(UnitId id) const
+	const Unit& GameWorld::getUnitById(UnitId id) const
 	{
-		auto it = _unitById.find(id);
-		return (it != _unitById.end()) ? it->second : nullptr;
+		return *_unitById.at(id);
 	}
 
-	Unit* GameWorld::getUnitById(UnitId id)
+	Unit& GameWorld::getUnitById(UnitId id)
 	{
-		auto it = _unitById.find(id);
-		return (it != _unitById.end()) ? it->second : nullptr;
+		return *_unitById.at(id);
 	}
 
-	std::optional<Position> GameWorld::getUnitPosition(UnitId id) const
+	Position GameWorld::getUnitPosition(UnitId id) const
 	{
-		auto it = _unitPositions.find(id);
-		if (it != _unitPositions.end())
-		{
-			return it->second;
-		}
-		return std::nullopt;
+		return _unitPositions.at(id);
 	}
 
 	size_t GameWorld::getUnitCount() const noexcept
@@ -128,29 +123,18 @@ namespace sw::core
 	{
 		if (!isValid(to))
 		{
-			return false;
+			throw std::out_of_range("Move target out of bounds");
 		}
 
-		auto posIt = _unitPositions.find(unitId);
-		if (posIt == _unitPositions.end())
-		{
-			return false;
-		}
-
-		auto unitIt = _unitById.find(unitId);
-		if (unitIt == _unitById.end())
-		{
-			return false;
-		}
-
-		Unit* unit = unitIt->second;
-		Position from = posIt->second;
+		auto& posRef = _unitPositions.at(unitId);
+		Unit* unitPtr = _unitById.at(unitId);
+		Position from = posRef;
 
 		// Update grid
 		// 1. Remove from old
 		size_t fromIndex = getGridIndex(from);
 		auto& oldCell = _grid[fromIndex];
-		auto itGrid = std::find(oldCell.begin(), oldCell.end(), unit);
+		auto itGrid = std::find(oldCell.begin(), oldCell.end(), unitPtr);
 		if (itGrid == oldCell.end())
 		{
 			throw std::runtime_error("GameWorld grid out of sync (unit not found in its current cell)");
@@ -159,10 +143,10 @@ namespace sw::core
 
 		// 2. Add to new
 		size_t toIndex = getGridIndex(to);
-		_grid[toIndex].push_back(unit);
+		_grid[toIndex].push_back(unitPtr);
 
 		// Update position
-		posIt->second = to;
+		posRef = to;
 
 		return true;
 	}
@@ -179,10 +163,11 @@ namespace sw::core
 				UnitId unitId = unit->getId();
 				removedIds.push_back(unitId);
 
-				auto posIt = _unitPositions.find(unitId);
-				if (posIt != _unitPositions.end() && isValid(posIt->second))
+				auto pos = _unitPositions.at(unitId);
+
+				if (isValid(pos))
 				{
-					size_t index = getGridIndex(posIt->second);
+					size_t index = getGridIndex(pos);
 					auto& cell = _grid[index];
 					auto it = std::find(cell.begin(), cell.end(), unit.get());
 					if (it == cell.end())

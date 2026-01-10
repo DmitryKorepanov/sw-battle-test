@@ -69,12 +69,7 @@ namespace sw::features
 				return false;
 			}
 
-			auto posOpt = world.getUnitPosition(unit.getId());
-			if (!posOpt)
-			{
-				return false;
-			}
-			core::Position pos = *posOpt;
+			core::Position pos = world.getUnitPosition(unit.getId());
 
 			// If already at target -> can execute (to finish)
 			if (pos == march->target)
@@ -94,14 +89,8 @@ namespace sw::features
 				return;
 			}
 
-			auto posOpt = world.getUnitPosition(unit.getId());
-			if (!posOpt)
-			{
-				return;
-			}
-
 			auto target = march->target;
-			auto pos = *posOpt;
+			auto pos = world.getUnitPosition(unit.getId());
 
 			// Check if already at target (start of turn or immediate completion)
 			if (pos == target)
