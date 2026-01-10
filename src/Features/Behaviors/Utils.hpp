@@ -54,10 +54,9 @@ namespace sw::features::utils
 							p,
 							[&](UnitT& otherRef)
 							{
-								UnitPtrT other = &otherRef;
-								if (filter(other))
+								if (filter(otherRef))
 								{
-									targets.push_back(other);
+									targets.push_back(&otherRef);
 								}
 							});
 					}
@@ -67,9 +66,9 @@ namespace sw::features::utils
 		}
 	}
 
-	inline bool hasHealth(const core::Unit* unit)
+	inline bool hasHealth(const core::Unit& unit)
 	{
-		return unit && unit->getComponent<HealthComponent>();
+		return unit.getComponent<HealthComponent>() != nullptr;
 	}
 
 	// Const version for canExecute (returns const Unit*)
@@ -77,7 +76,7 @@ namespace sw::features::utils
 		const core::Unit& unit, const core::IGameWorld& world, uint32_t minRange, uint32_t maxRange)
 	{
 		return details::getTargetsInRangeImpl<const core::IGameWorld, const core::Unit*>(
-			unit, world, minRange, maxRange, [](const core::Unit* u) { return hasHealth(u); });
+			unit, world, minRange, maxRange, [](const core::Unit& u) { return hasHealth(u); });
 	}
 
 	// Non-const version for execute (returns Unit*)
@@ -85,7 +84,7 @@ namespace sw::features::utils
 		const core::Unit& unit, core::IGameWorld& world, uint32_t minRange, uint32_t maxRange)
 	{
 		return details::getTargetsInRangeImpl<core::IGameWorld, core::Unit*>(
-			unit, world, minRange, maxRange, [](core::Unit* u) { return hasHealth(u); });
+			unit, world, minRange, maxRange, [](const core::Unit& u) { return hasHealth(u); });
 	}
 
 	// Returns all units in range (no filtering).
@@ -93,36 +92,31 @@ namespace sw::features::utils
 		const core::Unit& unit, const core::IGameWorld& world, uint32_t minRange, uint32_t maxRange)
 	{
 		return details::getTargetsInRangeImpl<const core::IGameWorld, const core::Unit*>(
-			unit, world, minRange, maxRange, [](const core::Unit*) { return true; });
+			unit, world, minRange, maxRange, [](const core::Unit&) { return true; });
 	}
 
 	inline std::vector<core::Unit*> getUnitsInRange(
 		const core::Unit& unit, core::IGameWorld& world, uint32_t minRange, uint32_t maxRange)
 	{
 		return details::getTargetsInRangeImpl<core::IGameWorld, core::Unit*>(
-			unit, world, minRange, maxRange, [](core::Unit*) { return true; });
+			unit, world, minRange, maxRange, [](const core::Unit&) { return true; });
 	}
 
 	inline void dealDamage(
-		core::Unit& attacker, core::Unit* target, uint32_t damage, core::IGameWorld& world, core::IGameEvents& events)
+		core::Unit& attacker, core::Unit& target, uint32_t damage, core::IGameEvents& events)
 	{
-		if (!target)
-		{
-			return;
-		}
-
-		auto* hp = target->getComponent<HealthComponent>();
+		auto* hp = target.getComponent<HealthComponent>();
 		if (!hp)
 		{
-			return;
+			throw std::runtime_error("Cannot damage unit without HealthComponent");
 		}
 
 		if (hp->takeDamage(damage))
 		{
-			target->setDead(true);
+			target.setDead(true);
 		}
 
-		events.onUnitAttacked(attacker.getId(), target->getId(), damage, hp->getHp());
+		events.onUnitAttacked(attacker.getId(), target.getId(), damage, hp->getHp());
 	}
 
 	inline bool isCellBlocked(const core::IGameWorld& world, core::Position pos)

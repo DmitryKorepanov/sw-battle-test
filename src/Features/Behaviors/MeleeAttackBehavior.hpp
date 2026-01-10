@@ -29,18 +29,18 @@ namespace sw::features
 			const auto* strength = unit.getComponent<StrengthComponent>();
 			if (!strength)
 			{
-				return;
+				throw std::runtime_error("MeleeAttackBehavior: Unit missing StrengthComponent");
 			}
 
 			auto targets = utils::getTargetsInRange(unit, world, 1, 1);
 			if (targets.empty())
 			{
-				return;
+				throw std::runtime_error("MeleeAttackBehavior: No targets found but canExecute returned true");
 			}
 
 			auto target = core::Random::getItem(targets);
 
-			utils::dealDamage(unit, target, strength->value, world, events);
+			utils::dealDamage(unit, *target, strength->value, events);
 		}
 	};
 }

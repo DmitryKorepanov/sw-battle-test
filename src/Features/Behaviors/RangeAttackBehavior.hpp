@@ -41,18 +41,18 @@ namespace sw::features
 			const auto* range = unit.getComponent<RangeComponent>();
 			if (!agility || !range)
 			{
-				return;
+				throw std::runtime_error("RangeAttackBehavior: Unit missing AgilityComponent or RangeComponent");
 			}
 
 			auto targets = utils::getTargetsInRange(unit, world, 2, range->value);
 			if (targets.empty())
 			{
-				return;
+				throw std::runtime_error("RangeAttackBehavior: No targets found but canExecute returned true");
 			}
 
 			auto target = core::Random::getItem(targets);
 
-			utils::dealDamage(unit, target, agility->value, world, events);
+			utils::dealDamage(unit, *target, agility->value, events);
 		}
 	};
 }

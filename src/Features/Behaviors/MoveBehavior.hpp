@@ -86,7 +86,7 @@ namespace sw::features
 			auto* march = unit.getComponent<MarchComponent>();
 			if (!march)
 			{
-				return;
+				throw std::runtime_error("MoveBehavior: Unit missing MarchComponent");
 			}
 
 			auto target = march->target;
@@ -103,7 +103,7 @@ namespace sw::features
 			core::Position nextPos{};
 			if (!tryGetNextPos(pos, world, *march, nextPos))
 			{
-				return;
+				throw std::runtime_error("MoveBehavior: Path blocked or invalid but canExecute returned true");
 			}
 
 			const auto from = pos;
